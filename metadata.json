@@ -1,0 +1,6 @@
+{
+  "name": "Resource Hub",
+  "description": "Personal discovery and bookmark library for developer, AI, and web-building resources.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
