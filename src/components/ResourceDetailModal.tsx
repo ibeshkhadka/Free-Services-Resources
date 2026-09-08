@@ -4,9 +4,6 @@ import {
   X,
   ExternalLink,
   Star,
-  CheckCircle2,
-  AlertTriangle,
-  Tag,
   Calendar,
   CreditCard,
   Target,
@@ -169,41 +166,6 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Strengths & Limitations Side by Side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Key Strengths */}
-            <div className="p-4 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 space-y-2">
-              <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Key Strengths</span>
-              </div>
-              <ul className="space-y-1.5 text-xs text-stone-700 dark:text-stone-300">
-                {resource.keyStrengths.map((str, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                    <span>{str}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Key Limitations */}
-            <div className="p-4 rounded-xl bg-amber-50/40 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 space-y-2">
-              <div className="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
-                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                <span>Key Limitations</span>
-              </div>
-              <ul className="space-y-1.5 text-xs text-stone-700 dark:text-stone-300">
-                {resource.keyLimitations.map((lim, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="text-amber-500 font-bold mt-0.5">•</span>
-                    <span>{lim}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
           {/* Personal Notes Section (Editable) */}
           <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/80 dark:border-stone-800 space-y-2">
             <div className="flex items-center justify-between">
@@ -243,25 +205,6 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
               </p>
             )}
           </div>
-
-          {/* Tags Cloud */}
-          {resource.tags.length > 0 && (
-            <div className="space-y-1.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-stone-400 block">
-                Tags & Keywords
-              </span>
-              <div className="flex flex-wrap gap-1.5">
-                {resource.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200/60 dark:border-stone-700"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Meta Information: Date */}
           <div className="flex items-center gap-4 text-[11px] text-stone-400 pt-2 border-t border-stone-100 dark:border-stone-800">

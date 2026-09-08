@@ -88,9 +88,6 @@ class StorageService {
       addedAt: resource.addedAt || now,
       updatedAt: now,
       isFavorite: resource.isFavorite ?? false,
-      tags: resource.tags || [],
-      keyStrengths: resource.keyStrengths || [],
-      keyLimitations: resource.keyLimitations || []
     };
 
     if (isNew) {
@@ -169,7 +166,7 @@ class StorageService {
   filterResources(resources: Resource[], options: FilterOptions): Resource[] {
     let result = [...resources];
 
-    // Global Search across: name, shortDescription, tags, category, use cases, bestFor, personalNotes
+    // Global Search across: name, shortDescription, category, use cases, bestFor, personalNotes
     if (options.searchQuery.trim()) {
       const q = options.searchQuery.toLowerCase().trim();
       result = result.filter((r) => {
@@ -178,10 +175,7 @@ class StorageService {
           r.shortDescription.toLowerCase().includes(q) ||
           r.mainUseCase.toLowerCase().includes(q) ||
           r.bestFor.toLowerCase().includes(q) ||
-          (r.personalNotes && r.personalNotes.toLowerCase().includes(q)) ||
-          r.tags.some((t) => t.toLowerCase().includes(q)) ||
-          r.keyStrengths.some((s) => s.toLowerCase().includes(q)) ||
-          r.keyLimitations.some((l) => l.toLowerCase().includes(q))
+          (r.personalNotes && r.personalNotes.toLowerCase().includes(q))
         );
       });
     }
@@ -196,11 +190,6 @@ class StorageService {
       result = result.filter((r) => r.pricing === options.selectedPricing);
     }
 
-    // Tag filter
-    if (options.selectedTag) {
-      result = result.filter((r) => r.tags.some((t) => t.toLowerCase() === options.selectedTag.toLowerCase()));
-    }
-
     // Favorites filter
     if (options.onlyFavorites) {
       result = result.filter((r) => r.isFavorite);
@@ -212,7 +201,6 @@ class StorageService {
       result = result.filter((r) => {
         return (
           r.bestFor.toLowerCase().includes(bf) ||
-          r.tags.some((t) => t.toLowerCase().includes(bf)) ||
           r.mainUseCase.toLowerCase().includes(bf)
         );
       });

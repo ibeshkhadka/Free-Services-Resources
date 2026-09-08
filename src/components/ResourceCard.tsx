@@ -3,9 +3,6 @@ import { Resource, Category } from '../types/resource';
 import {
   Star,
   ExternalLink,
-  CheckCircle2,
-  AlertCircle,
-  Tag,
   Scale,
   Sparkles,
   ArrowRight,
@@ -21,7 +18,6 @@ interface ResourceCardProps {
   onToggleFavorite: (id: string, e: React.MouseEvent) => void;
   isCompared: boolean;
   onToggleCompare: (resource: Resource, e: React.MouseEvent) => void;
-  onSelectTag: (tag: string, e: React.MouseEvent) => void;
 }
 
 export const ResourceCard: React.FC<ResourceCardProps> = ({
@@ -32,7 +28,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
   onToggleFavorite,
   isCompared,
   onToggleCompare,
-  onSelectTag
 }) => {
   const pricingColors = {
     Free: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
@@ -89,7 +84,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           </div>
         </div>
 
-        {/* Action Controls & Tags */}
+        {/* Action Controls */}
         <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
           {/* Compare toggle */}
           <button
@@ -228,21 +223,6 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
           </div>
         </div>
 
-        {/* Key Strengths at a glance (top 2) */}
-        {resource.keyStrengths && resource.keyStrengths.length > 0 && (
-          <div className="space-y-1.5 mb-3.5">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">
-              Key Strengths
-            </div>
-            {resource.keyStrengths.slice(0, 2).map((strength, idx) => (
-              <div key={idx} className="flex items-start gap-1.5 text-xs text-stone-600 dark:text-stone-300">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <span className="line-clamp-1">{strength}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
         {/* Main Use Case */}
         <div className="text-xs text-stone-500 dark:text-stone-400 mb-3 bg-stone-50 dark:bg-stone-800/40 p-2.5 rounded-lg border border-stone-100 dark:border-stone-800/60">
           <span className="font-semibold text-stone-700 dark:text-stone-300">Use case: </span>
@@ -250,27 +230,8 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({
         </div>
       </div>
 
-      {/* Footer: Tags and Link */}
+      {/* Footer: Link & Details Arrow */}
       <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2 mt-auto">
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1 max-w-[70%] overflow-hidden h-5">
-          {resource.tags.slice(0, 3).map((tag) => (
-            <button
-              key={tag}
-              onClick={(e) => onSelectTag(tag, e)}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-400 transition-colors truncate"
-            >
-              #{tag}
-            </button>
-          ))}
-          {resource.tags.length > 3 && (
-            <span className="text-[10px] text-stone-400 self-center">
-              +{resource.tags.length - 3}
-            </span>
-          )}
-        </div>
-
-        {/* External Link & Details Arrow */}
         <div className="flex items-center gap-1.5">
           <a
             href={resource.websiteUrl}

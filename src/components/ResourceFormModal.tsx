@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Resource, Category, PricingModel } from '../types/resource';
-import { X, Plus, Trash2, Sparkles } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 
 interface ResourceFormModalProps {
   isOpen: boolean;
@@ -29,11 +29,6 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
   const [personalNotes, setPersonalNotes] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // Dynamic lists
-  const [strengths, setStrengths] = useState<string[]>(['']);
-  const [limitations, setLimitations] = useState<string[]>(['']);
-  const [tagsInput, setTagsInput] = useState('');
-
   useEffect(() => {
     if (initialData) {
       setName(initialData.name || '');
@@ -47,9 +42,6 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
       setBestFor(initialData.bestFor || '');
       setPersonalNotes(initialData.personalNotes || '');
       setIsFavorite(initialData.isFavorite || false);
-      setStrengths(initialData.keyStrengths?.length ? [...initialData.keyStrengths] : ['']);
-      setLimitations(initialData.keyLimitations?.length ? [...initialData.keyLimitations] : ['']);
-      setTagsInput(initialData.tags?.join(', ') || '');
     } else {
       setName('');
       setWebsiteUrl('');
@@ -62,33 +54,10 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
       setBestFor('');
       setPersonalNotes('');
       setIsFavorite(false);
-      setStrengths(['']);
-      setLimitations(['']);
-      setTagsInput('');
     }
   }, [initialData, categories, isOpen]);
 
   if (!isOpen) return null;
-
-  const handleAddStrength = () => setStrengths([...strengths, '']);
-  const handleRemoveStrength = (index: number) => {
-    setStrengths(strengths.filter((_, i) => i !== index));
-  };
-  const handleStrengthChange = (index: number, val: string) => {
-    const updated = [...strengths];
-    updated[index] = val;
-    setStrengths(updated);
-  };
-
-  const handleAddLimitation = () => setLimitations([...limitations, '']);
-  const handleRemoveLimitation = (index: number) => {
-    setLimitations(limitations.filter((_, i) => i !== index));
-  };
-  const handleLimitationChange = (index: number, val: string) => {
-    const updated = [...limitations];
-    updated[index] = val;
-    setLimitations(updated);
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,14 +65,6 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
       alert('Please provide a tool name and website URL.');
       return;
     }
-
-    const cleanedTags = tagsInput
-      .split(',')
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-
-    const cleanedStrengths = strengths.map((s) => s.trim()).filter((s) => s.length > 0);
-    const cleanedLimitations = limitations.map((l) => l.trim()).filter((l) => l.length > 0);
 
     onSave({
       id: initialData?.id,
@@ -118,9 +79,6 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
       bestFor: bestFor.trim() || 'General development use',
       personalNotes: personalNotes.trim(),
       isFavorite,
-      keyStrengths: cleanedStrengths,
-      keyLimitations: cleanedLimitations,
-      tags: cleanedTags
     });
 
     onClose();
@@ -295,95 +253,7 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
             />
           </div>
 
-          {/* Row 6: Key Strengths (Dynamic list) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="font-semibold text-emerald-800 dark:text-emerald-300">
-                Key Strengths
-              </label>
-              <button
-                type="button"
-                onClick={handleAddStrength}
-                className="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Add Strength</span>
-              </button>
-            </div>
-            {strengths.map((str, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={str}
-                  onChange={(e) => handleStrengthChange(idx, e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
-                  placeholder={`Strength ${idx + 1}`}
-                />
-                {strengths.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveStrength(idx)}
-                    className="text-stone-400 hover:text-rose-500 p-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Row 7: Key Limitations (Dynamic list) */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="font-semibold text-amber-800 dark:text-amber-300">
-                Key Limitations
-              </label>
-              <button
-                type="button"
-                onClick={handleAddLimitation}
-                className="text-amber-600 hover:text-amber-800 font-medium flex items-center gap-1"
-              >
-                <Plus className="w-3 h-3" />
-                <span>Add Limitation</span>
-              </button>
-            </div>
-            {limitations.map((lim, idx) => (
-              <div key={idx} className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={lim}
-                  onChange={(e) => handleLimitationChange(idx, e.target.value)}
-                  className="flex-1 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
-                  placeholder={`Limitation ${idx + 1}`}
-                />
-                {limitations.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveLimitation(idx)}
-                    className="text-stone-400 hover:text-rose-500 p-1"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Row 8: Tags (Comma-separated) */}
-          <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Tags (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-              placeholder="PostgreSQL, Auth, Realtime, Open Source"
-            />
-          </div>
-
-          {/* Row 9: Personal Notes */}
+          {/* Row 6: Personal Notes */}
           <div>
             <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
               Personal Notes & Impressions

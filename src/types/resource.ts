@@ -19,12 +19,9 @@ export interface Resource {
   name: string;
   shortDescription: string;
   categoryId: string;
-  tags: string[];
   mainUseCase: string;
   pricing: PricingModel;
   pricingDetails?: string;
-  keyStrengths: string[];
-  keyLimitations: string[];
   websiteUrl: string;
   personalNotes: string;
   bestFor: string;
@@ -42,7 +39,6 @@ export interface FilterOptions {
   searchQuery: string;
   selectedCategory: string; // 'all' or categoryId
   selectedPricing: PricingModel | 'all';
-  selectedTag: string; // '' or tag name
   onlyFavorites: boolean;
   bestForFilter: string; // specific decision filter
   sortBy: SortOption;

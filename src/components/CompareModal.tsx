@@ -3,8 +3,6 @@ import { Resource, Category } from '../types/resource';
 import {
   X,
   Scale,
-  CheckCircle2,
-  AlertTriangle,
   ExternalLink,
   Target,
   Trash2
@@ -53,7 +51,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({
                 Side-by-Side Comparison ({comparedResources.length} Tools)
               </h2>
               <p className="text-xs text-stone-500 dark:text-stone-400">
-                Compare strengths, limitations, and architectural fit to make the right choice.
+                Compare features and architectural fit to make the right choice.
               </p>
             </div>
           </div>
@@ -147,38 +145,6 @@ export const CompareModal: React.FC<CompareModalProps> = ({
                         <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed bg-white dark:bg-stone-900 p-2.5 rounded-lg border border-stone-200/80 dark:border-stone-800">
                           {res.mainUseCase}
                         </p>
-                      </div>
-
-                      {/* Strengths */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                          <span>Key Strengths</span>
-                        </span>
-                        <ul className="space-y-1 text-xs text-stone-600 dark:text-stone-300">
-                          {res.keyStrengths.map((s, i) => (
-                            <li key={i} className="flex items-start gap-1.5">
-                              <span className="text-emerald-500 font-bold">•</span>
-                              <span>{s}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      {/* Limitations */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400 block flex items-center gap-1">
-                          <AlertTriangle className="w-3 h-3 text-amber-500" />
-                          <span>Key Limitations</span>
-                        </span>
-                        <ul className="space-y-1 text-xs text-stone-600 dark:text-stone-300">
-                          {res.keyLimitations.map((l, i) => (
-                            <li key={i} className="flex items-start gap-1.5">
-                              <span className="text-amber-500 font-bold">•</span>
-                              <span>{l}</span>
-                            </li>
-                          ))}
-                        </ul>
                       </div>
 
                       {/* Personal Notes */}

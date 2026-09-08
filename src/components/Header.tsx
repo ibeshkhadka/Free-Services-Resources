@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Compass,
   Plus,
   Moon,
   Sun,
@@ -17,7 +16,6 @@ interface HeaderProps {
   darkMode: boolean;
   onToggleDarkMode: () => void;
   onOpenAddModal: () => void;
-  onOpenDecisionGuide: () => void;
   onOpenCompare: () => void;
   compareCount: number;
   onExportData: () => void;
@@ -31,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   darkMode,
   onToggleDarkMode,
   onOpenAddModal,
-  onOpenDecisionGuide,
   onOpenCompare,
   compareCount,
   onExportData,
@@ -67,18 +64,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Decision Guide Quick Action */}
-          <button
-            id="decision-guide-btn"
-            onClick={onOpenDecisionGuide}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all border border-indigo-200 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300"
-            title="Browse by decision criteria & find the right tool"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Decision Guide</span>
-            <span className="sm:hidden">Decide</span>
-          </button>
-
           {/* Compare Toolbar Indicator */}
           {compareCount > 0 && (
             <button

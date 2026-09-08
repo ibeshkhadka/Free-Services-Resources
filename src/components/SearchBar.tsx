@@ -18,7 +18,6 @@ interface SearchBarProps {
   viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void;
   activeCategoryName?: string;
-  activeTagName?: string;
   activePricing?: string;
   activeBestForFilter?: string;
   onClearFilter: (type: 'category' | 'tag' | 'pricing' | 'bestFor' | 'all') => void;
@@ -34,7 +33,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   viewMode,
   onViewModeChange,
   activeCategoryName,
-  activeTagName,
   activePricing,
   activeBestForFilter,
   onClearFilter,
@@ -56,7 +54,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }, []);
 
   const hasActiveFilters = Boolean(
-    activeCategoryName || activeTagName || (activePricing && activePricing !== 'all') || activeBestForFilter || searchQuery
+    activeCategoryName || (activePricing && activePricing !== 'all') || activeBestForFilter || searchQuery
   );
 
   return (
@@ -71,7 +69,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             ref={inputRef}
             id="global-search-input"
             type="text"
-            placeholder="Search tools by name, category, use case, tags, 'best for'..."
+            placeholder="Search tools by name, category, use case, 'best for'..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-10 pr-12 py-2 text-sm rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all shadow-xs"
@@ -168,18 +166,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <button
                 onClick={() => onClearFilter('category')}
                 className="hover:text-stone-950 dark:hover:text-white"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
-
-          {activeTagName && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-              <span>Tag: #{activeTagName}</span>
-              <button
-                onClick={() => onClearFilter('tag')}
-                className="hover:text-indigo-950 dark:hover:text-white"
               >
                 <X className="w-3 h-3" />
               </button>

@@ -9,9 +9,7 @@ import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { ResourceFormModal } from './components/ResourceFormModal';
 import { CompareModal } from './components/CompareModal';
 import { CategoryManageModal } from './components/CategoryManageModal';
-import { DecisionMatrix } from './components/DecisionMatrix';
 import {
-  Compass,
   Plus,
   Scale,
   Sparkles,
@@ -34,14 +32,12 @@ export default function App() {
     return false;
   });
 
-  // --- Filtering & Sorting State ---
+  // Filtering & Sorting State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPricing, setSelectedPricing] = useState<PricingModel | 'all'>('all');
-  const [selectedTag, setSelectedTag] = useState('');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [showRecentOnly, setShowRecentOnly] = useState(false);
-  const [isDecisionMode, setIsDecisionMode] = useState(false);
   const [bestForFilter, setBestForFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -85,15 +81,6 @@ export default function App() {
     setResources(loadedRes);
   }, []);
 
-  // Compute Tags Across All Resources
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    resources.forEach((r) => {
-      r.tags?.forEach((t) => set.add(t));
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [resources]);
-
   // Compute Category Counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -113,7 +100,6 @@ export default function App() {
       searchQuery,
       selectedCategory,
       selectedPricing,
-      selectedTag,
       onlyFavorites,
       bestForFilter,
       sortBy: showRecentOnly ? 'recent' : sortBy
@@ -124,7 +110,6 @@ export default function App() {
     searchQuery,
     selectedCategory,
     selectedPricing,
-    selectedTag,
     onlyFavorites,
     showRecentOnly,
     bestForFilter,
@@ -261,7 +246,6 @@ export default function App() {
         setSelectedCategory('all');
         break;
       case 'tag':
-        setSelectedTag('');
         break;
       case 'pricing':
         setSelectedPricing('all');
@@ -273,7 +257,6 @@ export default function App() {
         setSearchQuery('');
         setSelectedCategory('all');
         setSelectedPricing('all');
-        setSelectedTag('');
         setBestForFilter('');
         setOnlyFavorites(false);
         setShowRecentOnly(false);
@@ -302,11 +285,6 @@ export default function App() {
           setResourceToEdit(null);
           setIsFormModalOpen(true);
         }}
-        onOpenDecisionGuide={() => {
-          setIsDecisionMode((prev) => !prev);
-          setOnlyFavorites(false);
-          setShowRecentOnly(false);
-        }}
         onOpenCompare={() => setIsCompareModalOpen(true)}
         compareCount={comparedResourceIds.length}
         onExportData={handleExportData}
@@ -328,15 +306,10 @@ export default function App() {
           }}
           selectedPricing={selectedPricing}
           onSelectPricing={setSelectedPricing}
-          selectedTag={selectedTag}
-          onSelectTag={setSelectedTag}
-          allTags={allTags}
           onlyFavorites={onlyFavorites}
           onToggleFavorites={setOnlyFavorites}
           showRecentOnly={showRecentOnly}
           onToggleRecent={setShowRecentOnly}
-          isDecisionMode={isDecisionMode}
-          onToggleDecisionMode={setIsDecisionMode}
           onOpenAddCategoryModal={() => setIsCategoryModalOpen(true)}
           categoryCounts={categoryCounts}
           totalCount={resources.length}
@@ -347,39 +320,6 @@ export default function App() {
 
         {/* Content Area */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 min-w-0">
-          {/* Decision Matrix Section (When Decision Mode is active or top of category) */}
-          {isDecisionMode ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Compass className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                  <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                    Decision-Oriented Explorer
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setIsDecisionMode(false)}
-                  className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
-                >
-                  Return to standard grid
-                </button>
-              </div>
-
-              <DecisionMatrix
-                categories={categories}
-                resources={resources}
-                activeCategoryId={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                onSelectResource={(res) => setSelectedResourceDetail(res)}
-                onFilterByBestFor={(query) => {
-                  setBestForFilter(query);
-                  setIsDecisionMode(false);
-                }}
-                activeBestForFilter={bestForFilter}
-              />
-            </div>
-          ) : (
-            <>
               {/* Category Quick Decision Banner (if viewing specific category) */}
               {activeCategoryObj && (
                 <div className="p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-2xs space-y-3">
@@ -398,45 +338,7 @@ export default function App() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => setIsDecisionMode(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 transition-colors shrink-0 self-start sm:self-auto"
-                    >
-                      <Compass className="w-3.5 h-3.5" />
-                      <span>Decision Guide</span>
-                    </button>
                   </div>
-
-                  {/* Decision Pills for this Category */}
-                  {activeCategoryObj.decisionThemes && activeCategoryObj.decisionThemes.length > 0 && (
-                    <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 block mb-1.5">
-                        Browse by Decision Criteria:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {activeCategoryObj.decisionThemes.map((theme) => {
-                          const active = bestForFilter.toLowerCase() === theme.filterValue?.toLowerCase();
-                          return (
-                            <button
-                              key={theme.label}
-                              id={`cat-theme-${theme.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`}
-                              onClick={() => {
-                                setBestForFilter(active ? '' : theme.filterValue || '');
-                              }}
-                              className={`px-2.5 py-1 text-xs rounded-lg transition-all border ${
-                                active
-                                  ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 border-stone-900 font-semibold shadow-2xs'
-                                  : 'bg-stone-50 dark:bg-stone-800/60 hover:bg-stone-100 dark:hover:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300'
-                              }`}
-                              title={theme.description}
-                            >
-                              {theme.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -449,7 +351,6 @@ export default function App() {
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
                 activeCategoryName={selectedCategory !== 'all' ? activeCategoryObj?.name : undefined}
-                activeTagName={selectedTag || undefined}
                 activePricing={selectedPricing !== 'all' ? selectedPricing : undefined}
                 activeBestForFilter={bestForFilter || undefined}
                 onClearFilter={handleClearFilter}
@@ -500,10 +401,6 @@ export default function App() {
                         onToggleFavorite={handleToggleFavorite}
                         isCompared={isCompared}
                         onToggleCompare={handleToggleCompare}
-                        onSelectTag={(tag, e) => {
-                          e.stopPropagation();
-                          setSelectedTag(tag);
-                        }}
                       />
                     );
                   })}
@@ -523,17 +420,11 @@ export default function App() {
                         onToggleFavorite={handleToggleFavorite}
                         isCompared={isCompared}
                         onToggleCompare={handleToggleCompare}
-                        onSelectTag={(tag, e) => {
-                          e.stopPropagation();
-                          setSelectedTag(tag);
-                        }}
                       />
                     );
                   })}
                 </div>
               )}
-            </>
-          )}
         </main>
       </div>
 
