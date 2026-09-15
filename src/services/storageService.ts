@@ -4,6 +4,17 @@ import { INITIAL_CATEGORIES, INITIAL_RESOURCES } from '../data/seedData';
 const STORAGE_KEY_RESOURCES = 'resource_hub_items_v1';
 const STORAGE_KEY_CATEGORIES = 'resource_hub_categories_v1';
 
+// Only http/https URLs are ever safe to render into an <a href>; anything
+// else (e.g. a javascript: URL from imported data) is rejected here.
+const isSafeUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
 class StorageService {
   private getStorageItem<T>(key: string, fallback: T): T {
     try {
@@ -26,17 +37,18 @@ class StorageService {
 
   // --- Categories ---
   getCategories(): Category[] {
-    const categories = this.getStorageItem<Category[]>(STORAGE_KEY_CATEGORIES, []);
-    if (!categories || categories.length === 0) {
+    // Seed based on key existence, not array emptiness, so a user who deletes
+    // every category doesn't get the seed data resurrected on the next read.
+    if (localStorage.getItem(STORAGE_KEY_CATEGORIES) === null) {
       this.setStorageItem(STORAGE_KEY_CATEGORIES, INITIAL_CATEGORIES);
       return INITIAL_CATEGORIES;
     }
-    return categories;
+    return this.getStorageItem<Category[]>(STORAGE_KEY_CATEGORIES, []);
   }
 
   saveCategory(category: Partial<Category> & { name: string }): Category {
     const categories = this.getCategories();
-    const id = category.id || `cat-${Date.now()}`;
+    const id = category.id || crypto.randomUUID(); // collision-safe ids
     const slug = category.slug || category.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     const newCat: Category = {
@@ -62,19 +74,24 @@ class StorageService {
     return newCat;
   }
 
-  deleteCategory(categoryId: string): void {
+  // Returns how many resources referenced the deleted category so the caller
+  // can warn instead of silently stranding them.
+  deleteCategory(categoryId: string): { orphanedResources: number } {
+    const orphaned = this.getResources().filter((r) => r.categoryId === categoryId).length;
     const categories = this.getCategories().filter((c) => c.id !== categoryId);
     this.setStorageItem(STORAGE_KEY_CATEGORIES, categories);
+    return { orphanedResources: orphaned };
   }
 
   // --- Resources ---
   getResources(): Resource[] {
-    const resources = this.getStorageItem<Resource[]>(STORAGE_KEY_RESOURCES, []);
-    if (!resources || resources.length === 0) {
+    // Same exists-check as getCategories: empty-but-present means the user
+    // deliberately deleted everything — don't re-seed.
+    if (localStorage.getItem(STORAGE_KEY_RESOURCES) === null) {
       this.setStorageItem(STORAGE_KEY_RESOURCES, INITIAL_RESOURCES);
       return INITIAL_RESOURCES;
     }
-    return resources;
+    return this.getStorageItem<Resource[]>(STORAGE_KEY_RESOURCES, []);
   }
 
   saveResource(resource: Omit<Resource, 'id' | 'addedAt'> & { id?: string; addedAt?: string }): Resource {
@@ -84,7 +101,7 @@ class StorageService {
 
     const completeResource: Resource = {
       ...resource,
-      id: resource.id || `res-${Date.now()}`,
+      id: resource.id || crypto.randomUUID(), // collision-safe ids
       addedAt: resource.addedAt || now,
       updatedAt: now,
       isFavorite: resource.isFavorite ?? false,
@@ -147,15 +164,48 @@ class StorageService {
         return { success: false, message: 'Invalid JSON format: missing resources array.' };
       }
 
+      // Previously items were stored verbatim, so a resource missing required
+      // fields would crash the app the moment filterResources ran on it.
+      // Normalize every item instead of trusting the input.
+      const normalizeResource = (raw: Partial<Resource>): Resource | null => {
+        if (!raw || typeof raw.name !== 'string' || !raw.name.trim()) return null;
+        const url = typeof raw.websiteUrl === 'string' ? raw.websiteUrl : '';
+        return {
+          id: typeof raw.id === 'string' && raw.id ? raw.id : crypto.randomUUID(),
+          name: raw.name,
+          shortDescription: typeof raw.shortDescription === 'string' ? raw.shortDescription : '',
+          categoryId: typeof raw.categoryId === 'string' ? raw.categoryId : '',
+          mainUseCase: typeof raw.mainUseCase === 'string' ? raw.mainUseCase : '',
+          pricing: raw.pricing === 'Free' || raw.pricing === 'Paid' ? raw.pricing : 'Freemium',
+          pricingDetails: typeof raw.pricingDetails === 'string' ? raw.pricingDetails : undefined,
+          // Refuse non-http(s) URLs so imported data can't inject
+          // javascript: hrefs into rendered links.
+          websiteUrl: isSafeUrl(url) ? url : '',
+          personalNotes: typeof raw.personalNotes === 'string' ? raw.personalNotes : '',
+          bestFor: typeof raw.bestFor === 'string' ? raw.bestFor : 'General development use',
+          isFavorite: Boolean(raw.isFavorite),
+          rating: typeof raw.rating === 'number' ? raw.rating : undefined,
+          iconSymbol: typeof raw.iconSymbol === 'string' ? raw.iconSymbol : undefined,
+          addedAt: typeof raw.addedAt === 'string' ? raw.addedAt : new Date().toISOString(),
+          updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : undefined,
+        };
+      };
+
+      const resources = parsed.resources
+        .map(normalizeResource)
+        .filter((r: Resource | null): r is Resource => r !== null);
+      const dropped = parsed.resources.length - resources.length;
+
       if (parsed.categories && Array.isArray(parsed.categories)) {
         this.setStorageItem(STORAGE_KEY_CATEGORIES, parsed.categories);
       }
+      this.setStorageItem(STORAGE_KEY_RESOURCES, resources);
 
-      this.setStorageItem(STORAGE_KEY_RESOURCES, parsed.resources);
+      const suffix = dropped > 0 ? ` (${dropped} malformed item${dropped === 1 ? '' : 's'} skipped.)` : '';
       return {
         success: true,
-        message: `Imported ${parsed.resources.length} resources successfully.`,
-        count: parsed.resources.length
+        message: `Imported ${resources.length} resources successfully.${suffix}`,
+        count: resources.length
       };
     } catch (e: unknown) {
       return { success: false, message: `Import error: ${e instanceof Error ? e.message : 'Invalid JSON'}` };
@@ -171,10 +221,12 @@ class StorageService {
       const q = options.searchQuery.toLowerCase().trim();
       result = result.filter((r) => {
         return (
-          r.name.toLowerCase().includes(q) ||
-          r.shortDescription.toLowerCase().includes(q) ||
-          r.mainUseCase.toLowerCase().includes(q) ||
-          r.bestFor.toLowerCase().includes(q) ||
+          // Optional chaining: imported/legacy items may lack these fields
+          // despite the type; a missing field shouldn't blank the page.
+          r.name?.toLowerCase().includes(q) ||
+          r.shortDescription?.toLowerCase().includes(q) ||
+          r.mainUseCase?.toLowerCase().includes(q) ||
+          r.bestFor?.toLowerCase().includes(q) ||
           (r.personalNotes && r.personalNotes.toLowerCase().includes(q))
         );
       });
@@ -200,8 +252,8 @@ class StorageService {
       const bf = options.bestForFilter.toLowerCase();
       result = result.filter((r) => {
         return (
-          r.bestFor.toLowerCase().includes(bf) ||
-          r.mainUseCase.toLowerCase().includes(bf)
+          r.bestFor?.toLowerCase().includes(bf) ||
+          r.mainUseCase?.toLowerCase().includes(bf)
         );
       });
     }
@@ -209,7 +261,9 @@ class StorageService {
     // Sorting
     switch (options.sortBy) {
       case 'recent':
-        result.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
+        // NaN comparator (missing addedAt) made sort order arbitrary;
+        // treat missing dates as oldest instead.
+        result.sort((a, b) => (new Date(b.addedAt).getTime() || 0) - (new Date(a.addedAt).getTime() || 0));
         break;
       case 'name-asc':
         result.sort((a, b) => a.name.localeCompare(b.name));

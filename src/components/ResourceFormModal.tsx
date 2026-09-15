@@ -38,6 +38,13 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, on
     event.preventDefault();
     if (!name.trim() || !websiteUrl.trim()) { setError('Please provide a tool name and website URL.'); return; }
     try {
+      const parsed = new URL(websiteUrl.trim());
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('bad scheme');
+    } catch {
+      setError('Website URL must be a valid http(s) URL.');
+      return;
+    }
+    try {
       onSave({
         id: initialData?.id, name: name.trim(), websiteUrl: websiteUrl.trim(),
         categoryId: categoryId || categories[0]?.id || 'baas', iconSymbol: iconSymbol.trim() || '⚡',

@@ -192,12 +192,14 @@ export default function App() {
   };
 
   const handleDeleteCategory = (catId: string) => {
-    storageService.deleteCategory(catId);
+    const { orphanedResources } = storageService.deleteCategory(catId);
     setCategories(storageService.getCategories());
     if (selectedCategory === catId) {
       setSelectedCategory('all');
     }
-    showToast('Category removed.');
+    showToast(orphanedResources > 0
+      ? `Category removed. ${orphanedResources} resource${orphanedResources === 1 ? '' : 's'} now uncategorized.`
+      : 'Category removed.');
   };
 
   const handleExportData = () => {
@@ -215,6 +217,11 @@ export default function App() {
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!window.confirm('Importing replaces your entire library. Continue?')) {
+      e.target.value = '';
+      return;
+    }
 
     setImporting(true);
     const reader = new FileReader();
