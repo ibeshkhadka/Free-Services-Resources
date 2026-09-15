@@ -9,10 +9,9 @@ import { ResourceDetailModal } from './components/ResourceDetailModal';
 import { ResourceFormModal } from './components/ResourceFormModal';
 import { CompareModal } from './components/CompareModal';
 import { CategoryManageModal } from './components/CategoryManageModal';
+import { Button, IconButton, EmptyState } from './components/ui';
 import {
-  Plus,
   Scale,
-  Sparkles,
   Inbox,
   CheckCircle2,
   AlertCircle,
@@ -53,9 +52,12 @@ export default function App() {
 
   // --- Toast Notifications ---
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [toastError, setToastError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = (msg: string, error = false) => {
+    setToastError(error);
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
@@ -214,6 +216,7 @@ export default function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setImporting(true);
     const reader = new FileReader();
     reader.onload = (event) => {
       const text = event.target?.result as string;
@@ -224,10 +227,12 @@ export default function App() {
           setResources(storageService.getResources());
           showToast(result.message);
         } else {
-          alert(result.message);
+          showToast(result.message, true);
         }
       }
     };
+    reader.onerror = () => showToast(reader.error?.message || 'Import error: Invalid JSON', true);
+    reader.onloadend = () => setImporting(false);
     reader.readAsText(file);
     e.target.value = '';
   };
@@ -267,256 +272,70 @@ export default function App() {
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-stone-50/70 text-stone-900 dark:bg-stone-950 dark:text-stone-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Hidden File Input for Import */}
-      <input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleImportFile}
-        accept=".json"
-        className="hidden"
-      />
-
-      {/* Header */}
-      <Header
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onOpenAddModal={() => {
-          setResourceToEdit(null);
-          setIsFormModalOpen(true);
-        }}
-        onOpenCompare={() => setIsCompareModalOpen(true)}
-        compareCount={comparedResourceIds.length}
-        onExportData={handleExportData}
-        onImportClick={() => fileInputRef.current?.click()}
-        onResetDefaults={handleResetDefaults}
-        totalResources={resources.length}
-        totalFavorites={favoritesCount}
-      />
-
-      {/* Main Layout */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto">
-        {/* Sidebar */}
-        <Sidebar
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(id) => {
-            setSelectedCategory(id);
-            setBestForFilter('');
-          }}
-          selectedPricing={selectedPricing}
-          onSelectPricing={setSelectedPricing}
-          onlyFavorites={onlyFavorites}
-          onToggleFavorites={setOnlyFavorites}
-          showRecentOnly={showRecentOnly}
-          onToggleRecent={setShowRecentOnly}
+    <div className={`app-shell ${comparedResourceIds.length ? 'has-comparison' : ''}`}>
+      <input type="file" ref={fileInputRef} onChange={handleImportFile} accept=".json" hidden aria-label="Import Library (JSON)" />
+      <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)}
+        onOpenAddModal={() => { setResourceToEdit(null); setIsFormModalOpen(true); }}
+        onOpenCompare={() => setIsCompareModalOpen(true)} compareCount={comparedResourceIds.length}
+        onExportData={handleExportData} onImportClick={() => fileInputRef.current?.click()}
+        onResetDefaults={handleResetDefaults} totalResources={resources.length} totalFavorites={favoritesCount} importing={importing} />
+      <div className="page-layout">
+        <Sidebar categories={categories} selectedCategory={selectedCategory}
+          onSelectCategory={id => { setSelectedCategory(id); setBestForFilter(''); }}
+          selectedPricing={selectedPricing} onSelectPricing={setSelectedPricing}
+          onlyFavorites={onlyFavorites} onToggleFavorites={setOnlyFavorites}
+          showRecentOnly={showRecentOnly} onToggleRecent={setShowRecentOnly}
           onOpenAddCategoryModal={() => setIsCategoryModalOpen(true)}
-          categoryCounts={categoryCounts}
-          totalCount={resources.length}
-          favoritesCount={favoritesCount}
-          mobileOpen={mobileSidebarOpen}
-          onCloseMobile={() => setMobileSidebarOpen(false)}
-        />
-
-        {/* Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 min-w-0">
-              {/* Category Quick Decision Banner (if viewing specific category) */}
-              {activeCategoryObj && (
-                <div className="p-4 sm:p-5 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-2xs space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-                          {activeCategoryObj.name}
-                        </h2>
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 font-semibold">
-                          {categoryCounts[activeCategoryObj.id] || 0} tools
-                        </span>
-                      </div>
-                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                        {activeCategoryObj.description}
-                      </p>
-                    </div>
-
-                  </div>
-                </div>
-              )}
-
-              {/* Global Search & Control Bar */}
-              <SearchBar
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                activeCategoryName={selectedCategory !== 'all' ? activeCategoryObj?.name : undefined}
-                activePricing={selectedPricing !== 'all' ? selectedPricing : undefined}
-                activeBestForFilter={bestForFilter || undefined}
-                onClearFilter={handleClearFilter}
-                onOpenMobileFilters={() => setMobileSidebarOpen(true)}
-                resultCount={filteredResources.length}
-              />
-
-              {/* Resource Cards Grid / List */}
-              {filteredResources.length === 0 ? (
-                <div className="p-12 text-center rounded-2xl border border-dashed border-stone-300 dark:border-stone-800 bg-white/50 dark:bg-stone-900/30 space-y-3">
-                  <Inbox className="w-10 h-10 mx-auto text-stone-400" />
-                  <h3 className="text-base font-bold text-stone-800 dark:text-stone-200">
-                    No matching tools found
-                  </h3>
-                  <p className="text-xs text-stone-500 max-w-md mx-auto">
-                    Try clearing your search query or removing active filters to see all available tools.
-                  </p>
-                  <div className="pt-2 flex items-center justify-center gap-2">
-                    <button
-                      onClick={() => handleClearFilter('all')}
-                      className="px-4 py-2 text-xs font-semibold rounded-xl bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900"
-                    >
-                      Clear All Filters
-                    </button>
-                    <button
-                      onClick={() => {
-                        setResourceToEdit(null);
-                        setIsFormModalOpen(true);
-                      }}
-                      className="px-4 py-2 text-xs font-semibold rounded-xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800"
-                    >
-                      + Add New Resource
-                    </button>
-                  </div>
-                </div>
-              ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {filteredResources.map((res) => {
-                    const cat = categories.find((c) => c.id === res.categoryId);
-                    const isCompared = comparedResourceIds.includes(res.id);
-                    return (
-                      <ResourceCard
-                        key={res.id}
-                        resource={res}
-                        category={cat}
-                        viewMode="grid"
-                        onSelect={(r) => setSelectedResourceDetail(r)}
-                        onToggleFavorite={handleToggleFavorite}
-                        isCompared={isCompared}
-                        onToggleCompare={handleToggleCompare}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredResources.map((res) => {
-                    const cat = categories.find((c) => c.id === res.categoryId);
-                    const isCompared = comparedResourceIds.includes(res.id);
-                    return (
-                      <ResourceCard
-                        key={res.id}
-                        resource={res}
-                        category={cat}
-                        viewMode="list"
-                        onSelect={(r) => setSelectedResourceDetail(r)}
-                        onToggleFavorite={handleToggleFavorite}
-                        isCompared={isCompared}
-                        onToggleCompare={handleToggleCompare}
-                      />
-                    );
-                  })}
-                </div>
-              )}
+          categoryCounts={categoryCounts} totalCount={resources.length} favoritesCount={favoritesCount}
+          mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
+        <main className="main-content" aria-label="Resource library" aria-busy={importing}>
+          {activeCategoryObj && <section className="category-intro">
+            <div className="category-heading"><h2>{activeCategoryObj.name}</h2><span className="count">{categoryCounts[activeCategoryObj.id] || 0} tools</span></div>
+            <p>{activeCategoryObj.description}</p>
+          </section>}
+          <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery}
+            sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode}
+            activeCategoryName={selectedCategory !== 'all' ? activeCategoryObj?.name : undefined}
+            activePricing={selectedPricing !== 'all' ? selectedPricing : undefined}
+            activeBestForFilter={bestForFilter || undefined} onClearFilter={handleClearFilter}
+            onOpenMobileFilters={() => setMobileSidebarOpen(true)} resultCount={filteredResources.length} />
+          {importing && <progress className="import-progress" aria-label="Import Library (JSON)" />}
+          {filteredResources.length === 0 ? <EmptyState icon={<Inbox aria-hidden="true" />} title="No matching tools found"
+            actions={<><Button variant="primary" onClick={() => handleClearFilter('all')}>Clear All Filters</Button><Button onClick={() => { setResourceToEdit(null); setIsFormModalOpen(true); }}>+ Add New Resource</Button></>}>
+            Try clearing your search query or removing active filters to see all available tools.
+          </EmptyState> : <div className={viewMode === 'grid' ? 'resource-grid' : 'resource-list'}>
+            {filteredResources.map(res => <ResourceCard key={res.id} resource={res}
+              category={categories.find(c => c.id === res.categoryId)} viewMode={viewMode}
+              onSelect={setSelectedResourceDetail} onToggleFavorite={handleToggleFavorite}
+              isCompared={comparedResourceIds.includes(res.id)} onToggleCompare={handleToggleCompare} />)}
+          </div>}
         </main>
       </div>
-
-      {/* Floating Compare Drawer (when 1+ items selected) */}
-      {comparedResourceIds.length > 0 && !isCompareModalOpen && (
-        <div
-          id="compare-floating-drawer"
-          className="fixed bottom-5 right-5 z-40 bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 border border-stone-800 dark:border-stone-200 animate-in fade-in slide-in-from-bottom-3"
-        >
-          <div className="flex items-center gap-2">
-            <Scale className="w-4 h-4 text-amber-400 dark:text-amber-600" />
-            <span className="text-xs font-bold">
-              {comparedResourceIds.length} {comparedResourceIds.length === 1 ? 'tool' : 'tools'} selected
-            </span>
-          </div>
-          <button
-            onClick={() => setIsCompareModalOpen(true)}
-            className="px-3 py-1 text-xs font-bold rounded-lg bg-amber-500 text-stone-950 hover:bg-amber-400 transition-colors shadow-xs"
-          >
-            Compare Side-by-Side
-          </button>
-          <button
-            onClick={() => setComparedResourceIds([])}
-            className="p-1 rounded hover:bg-stone-800 dark:hover:bg-stone-200 text-stone-400 hover:text-white dark:hover:text-stone-900"
-            title="Clear selection"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      <ResourceDetailModal
-        resource={selectedResourceDetail}
-        category={categories.find((c) => c.id === selectedResourceDetail?.categoryId)}
-        isOpen={Boolean(selectedResourceDetail)}
-        onClose={() => setSelectedResourceDetail(null)}
+      {comparedResourceIds.length > 0 && !isCompareModalOpen && <div id="compare-floating-drawer" className="compare-drawer" role="region" aria-label="Comparison">
+        <div className="compare-summary"><Scale aria-hidden="true" /><span>{comparedResourceIds.length} {comparedResourceIds.length === 1 ? 'tool' : 'tools'} selected</span></div>
+        <Button className="compare-launch" variant="primary" onClick={() => setIsCompareModalOpen(true)}>Compare Side-by-Side</Button>
+        <IconButton label="Clear selection" onClick={() => setComparedResourceIds([])}><X aria-hidden="true" /></IconButton>
+      </div>}
+      <ResourceDetailModal resource={selectedResourceDetail}
+        category={categories.find(c => c.id === selectedResourceDetail?.categoryId)}
+        isOpen={Boolean(selectedResourceDetail)} onClose={() => setSelectedResourceDetail(null)}
         onToggleFavorite={handleToggleFavorite}
-        onEdit={(r) => {
-          setSelectedResourceDetail(null);
-          setResourceToEdit(r);
-          setIsFormModalOpen(true);
-        }}
+        onEdit={r => { setSelectedResourceDetail(null); setResourceToEdit(r); setIsFormModalOpen(true); }}
         onDelete={handleDeleteResource}
-        isCompared={Boolean(
-          selectedResourceDetail && comparedResourceIds.includes(selectedResourceDetail.id)
-        )}
-        onToggleCompare={handleToggleCompare}
-        onSavePersonalNotes={handleSavePersonalNotes}
-      />
-
-      {/* Add / Edit Resource Modal */}
-      <ResourceFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setResourceToEdit(null);
-        }}
-        onSave={handleSaveResource}
-        initialData={resourceToEdit}
-        categories={categories}
-      />
-
-      {/* Compare Modal */}
-      <CompareModal
-        isOpen={isCompareModalOpen}
-        onClose={() => setIsCompareModalOpen(false)}
-        comparedResources={comparedResources}
-        categories={categories}
-        onRemoveFromCompare={(id) => {
-          setComparedResourceIds(comparedResourceIds.filter((cid) => cid !== id));
-        }}
-        onClearAll={() => setComparedResourceIds([])}
-        onOpenResourceDetails={(r) => setSelectedResourceDetail(r)}
-      />
-
-      {/* Manage Custom Categories Modal */}
-      <CategoryManageModal
-        isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        categories={categories}
-        onSaveCategory={handleSaveCategory}
-        onDeleteCategory={handleDeleteCategory}
-      />
-
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-stone-900/95 text-white dark:bg-stone-100/95 dark:text-stone-900 text-xs font-medium shadow-xl border border-stone-800 dark:border-stone-200 flex items-center gap-2 backdrop-blur-xs">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 dark:text-emerald-600" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+        isCompared={Boolean(selectedResourceDetail && comparedResourceIds.includes(selectedResourceDetail.id))}
+        onToggleCompare={handleToggleCompare} onSavePersonalNotes={handleSavePersonalNotes} />
+      <ResourceFormModal isOpen={isFormModalOpen}
+        onClose={() => { setIsFormModalOpen(false); setResourceToEdit(null); }}
+        onSave={handleSaveResource} initialData={resourceToEdit} categories={categories} />
+      <CompareModal isOpen={isCompareModalOpen} onClose={() => setIsCompareModalOpen(false)}
+        comparedResources={comparedResources} categories={categories}
+        onRemoveFromCompare={id => setComparedResourceIds(comparedResourceIds.filter(cid => cid !== id))}
+        onClearAll={() => setComparedResourceIds([])} onOpenResourceDetails={setSelectedResourceDetail} />
+      <CategoryManageModal isOpen={isCategoryModalOpen} onClose={() => setIsCategoryModalOpen(false)}
+        categories={categories} onSaveCategory={handleSaveCategory} onDeleteCategory={handleDeleteCategory} />
+      <div role={toastError ? 'alert' : 'status'} aria-live={toastError ? 'assertive' : 'polite'} aria-atomic="true">
+        {toastMessage && <div className={`toast ${toastError ? 'is-error' : ''}`}>{toastError ? <AlertCircle aria-hidden="true" /> : <CheckCircle2 aria-hidden="true" />}<span>{toastMessage}</span></div>}
+      </div>
     </div>
   );
 }

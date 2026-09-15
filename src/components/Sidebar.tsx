@@ -1,229 +1,44 @@
 import React from 'react';
 import { Category, PricingModel } from '../types/resource';
 import { CategoryIcon } from './CategoryIcon';
-import {
-  Layers,
-  Star,
-  Clock,
-  Plus,
-  CreditCard,
-  X,
-  SlidersHorizontal
-} from 'lucide-react';
+import { Layers, Star, Clock, Plus } from 'lucide-react';
+import { Button, IconButton, Modal } from './ui';
 
 interface SidebarProps {
-  categories: Category[];
-  selectedCategory: string;
-  onSelectCategory: (categoryId: string) => void;
-  selectedPricing: PricingModel | 'all';
-  onSelectPricing: (pricing: PricingModel | 'all') => void;
-  onlyFavorites: boolean;
-  onToggleFavorites: (val: boolean) => void;
-  showRecentOnly: boolean;
-  onToggleRecent: (val: boolean) => void;
-  onOpenAddCategoryModal: () => void;
-  categoryCounts: Record<string, number>;
-  totalCount: number;
-  favoritesCount: number;
-  mobileOpen: boolean;
-  onCloseMobile: () => void;
+  categories: Category[]; selectedCategory: string; onSelectCategory: (id: string) => void;
+  selectedPricing: PricingModel | 'all'; onSelectPricing: (pricing: PricingModel | 'all') => void;
+  onlyFavorites: boolean; onToggleFavorites: (val: boolean) => void;
+  showRecentOnly: boolean; onToggleRecent: (val: boolean) => void;
+  onOpenAddCategoryModal: () => void; categoryCounts: Record<string, number>;
+  totalCount: number; favoritesCount: number; mobileOpen: boolean; onCloseMobile: () => void;
 }
-
-export const Sidebar: React.FC<SidebarProps> = ({
-  categories,
-  selectedCategory,
-  onSelectCategory,
-  selectedPricing,
-  onSelectPricing,
-  onlyFavorites,
-  onToggleFavorites,
-  showRecentOnly,
-  onToggleRecent,
-  onOpenAddCategoryModal,
-  categoryCounts,
-  totalCount,
-  favoritesCount,
-  mobileOpen,
-  onCloseMobile
-}) => {
-  const content = (
-    <div className="flex flex-col h-full space-y-6 text-sm">
-      {/* Primary Navigation Views */}
-      <div className="space-y-1">
-        <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">
-          Views
-        </div>
-        <button
-          id="nav-all-resources"
-          onClick={() => {
-            onToggleFavorites(false);
-            onToggleRecent(false);
-            onSelectCategory('all');
-            onCloseMobile();
-          }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            !onlyFavorites && !showRecentOnly && selectedCategory === 'all'
-              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Layers className="w-4 h-4" />
-            <span>All Resources</span>
-          </div>
-          <span className="text-xs px-1.5 py-0.5 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-            {totalCount}
-          </span>
-        </button>
-
-        <button
-          id="nav-favorites"
-          onClick={() => {
-            onToggleFavorites(true);
-            onToggleRecent(false);
-            onCloseMobile();
-          }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            onlyFavorites
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-            <span>Starred / Bookmarks</span>
-          </div>
-          <span className="text-xs px-1.5 py-0.5 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-            {favoritesCount}
-          </span>
-        </button>
-
-
-        <button
-          id="nav-recently-added"
-          onClick={() => {
-            onToggleRecent(true);
-            onToggleFavorites(false);
-            onCloseMobile();
-          }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            showRecentOnly
-              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <Clock className="w-4 h-4" />
-            <span>Recently Added</span>
-          </div>
-        </button>
-      </div>
-
-      {/* Categories List */}
-      <div className="space-y-1">
-        <div className="flex items-center justify-between px-3 py-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">
-            Categories
-          </span>
-          <button
-            id="add-category-sidebar-btn"
-            onClick={onOpenAddCategoryModal}
-            className="text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 p-1 rounded hover:bg-stone-200/50 dark:hover:bg-stone-800"
-            title="Add custom category"
-          >
-            <Plus className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="space-y-0.5">
-          {categories.map((cat) => {
-            const isSelected =
-              !onlyFavorites && !showRecentOnly && selectedCategory === cat.id;
-            const count = categoryCounts[cat.id] || 0;
-
-            return (
-              <button
-                key={cat.id}
-                id={`cat-nav-${cat.id}`}
-                onClick={() => {
-                  onSelectCategory(cat.id);
-                  onToggleFavorites(false);
-                  onToggleRecent(false);
-                  onCloseMobile();
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                  isSelected
-                    ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 font-semibold'
-                    : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <CategoryIcon name={cat.iconName} className="w-4 h-4 shrink-0 opacity-80" />
-                  <span className="truncate">{cat.name}</span>
-                </div>
-                <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300 shrink-0">
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Pricing Filters */}
-      <div className="space-y-2">
-        <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300 flex items-center gap-1.5">
-          <CreditCard className="w-3.5 h-3.5" />
-          <span>Pricing Model</span>
-        </div>
-        <div className="grid grid-cols-2 gap-1 px-1">
-          {(['all', 'Free', 'Freemium', 'Paid'] as const).map((model) => (
-            <button
-              key={model}
-              id={`filter-pricing-${model.toLowerCase()}`}
-              onClick={() => onSelectPricing(model)}
-              className={`px-2.5 py-1.5 text-xs font-medium rounded-md border text-center transition-all ${
-                selectedPricing === model
-                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/70 dark:text-indigo-200 font-semibold'
-                  : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
-              }`}
-            >
-              {model === 'all' ? 'All Prices' : model}
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  return (
-    <>
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:block w-64 shrink-0 border-r border-stone-200 dark:border-stone-800 p-4 bg-stone-50/50 dark:bg-stone-900/30 min-h-[calc(100vh-4rem)]">
-        {content}
-      </aside>
-
-      {/* Mobile Drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden flex">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
-            onClick={onCloseMobile}
-          />
-          <div className="relative w-72 max-w-full bg-white dark:bg-stone-950 p-5 shadow-2xl overflow-y-auto flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-200 dark:border-stone-800 mb-4">
-              <span className="font-bold text-stone-900 dark:text-stone-100">Filters & Navigation</span>
-              <button
-                onClick={onCloseMobile}
-                className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {content}
-          </div>
-        </div>
-      )}
-    </>
-  );
+function NavItem({ selected, icon, children, count, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  selected: boolean; icon: React.ReactNode; count?: number;
+}) {
+  return <button className="nav-button" aria-pressed={selected} {...props}><span className="nav-label">{icon}<span>{children}</span></span>{count !== undefined && <span className="count">{count}</span>}</button>;
+}
+export const Sidebar: React.FC<SidebarProps> = props => {
+  const { categories, selectedCategory, onSelectCategory, selectedPricing, onSelectPricing,
+    onlyFavorites, onToggleFavorites, showRecentOnly, onToggleRecent, onOpenAddCategoryModal,
+    categoryCounts, totalCount, favoritesCount, mobileOpen, onCloseMobile } = props;
+  // Render only the open mobile copy to avoid duplicate control IDs.
+  const content = (mobile = false) => <nav className="sidebar-content" aria-label="Filters & Navigation">
+    <section className="nav-section" aria-label="Views">
+      <div className="nav-heading"><h2 className="eyebrow">Views</h2></div>
+      <NavItem id={mobile ? 'mobile-nav-all-resources' : 'nav-all-resources'} selected={!onlyFavorites && !showRecentOnly && selectedCategory === 'all'} icon={<Layers aria-hidden="true" />} count={totalCount} onClick={() => { onToggleFavorites(false); onToggleRecent(false); onSelectCategory('all'); onCloseMobile(); }}>All Resources</NavItem>
+      <NavItem id={mobile ? 'mobile-nav-favorites' : 'nav-favorites'} selected={onlyFavorites} icon={<Star aria-hidden="true" />} count={favoritesCount} onClick={() => { onToggleFavorites(true); onToggleRecent(false); onCloseMobile(); }}>Starred / Bookmarks</NavItem>
+      <NavItem id={mobile ? 'mobile-nav-recently-added' : 'nav-recently-added'} selected={showRecentOnly} icon={<Clock aria-hidden="true" />} onClick={() => { onToggleRecent(true); onToggleFavorites(false); onCloseMobile(); }}>Recently Added</NavItem>
+    </section>
+    <section className="nav-section" aria-label="Categories">
+      <div className="nav-heading"><h2 className="eyebrow">Categories</h2><IconButton id={mobile ? 'mobile-add-category-sidebar-btn' : 'add-category-sidebar-btn'} label="Add custom category" onClick={() => { onCloseMobile(); onOpenAddCategoryModal(); }}><Plus aria-hidden="true" /></IconButton></div>
+      {categories.map(cat => <NavItem key={cat.id} id={`${mobile ? 'mobile-' : ''}cat-nav-${cat.id}`} selected={!onlyFavorites && !showRecentOnly && selectedCategory === cat.id} icon={<CategoryIcon name={cat.iconName} aria-hidden="true" />} count={categoryCounts[cat.id] || 0} onClick={() => { onSelectCategory(cat.id); onToggleFavorites(false); onToggleRecent(false); onCloseMobile(); }}>{cat.name}</NavItem>)}
+    </section>
+    <section aria-label="Pricing Model"><div className="nav-heading"><h2 className="eyebrow">Pricing Model</h2></div>
+      <div className="pricing-filters">{(['all', 'Free', 'Freemium', 'Paid'] as const).map(model => <Button key={model} id={`${mobile ? 'mobile-' : ''}filter-pricing-${model.toLowerCase()}`} aria-pressed={selectedPricing === model} onClick={() => onSelectPricing(model)}>{model === 'all' ? 'All Prices' : model}</Button>)}</div>
+    </section>
+  </nav>;
+  return <>
+    <aside className="sidebar">{content()}</aside>
+    <Modal id="mobile-sidebar" isOpen={mobileOpen} onClose={onCloseMobile} title="Filters & Navigation" className="modal-drawer">{content(true)}</Modal>
+  </>;
 };
