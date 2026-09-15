@@ -1,15 +1,8 @@
 import React from 'react';
 import { Category, PricingModel } from '../types/resource';
 import { CategoryIcon } from './CategoryIcon';
-import {
-  Layers,
-  Star,
-  Clock,
-  Plus,
-  CreditCard,
-  X,
-  SlidersHorizontal
-} from 'lucide-react';
+import { Layers, Star, Clock, Plus, X } from 'lucide-react';
+import { toneOf } from './ui/categoryTone';
 
 interface SidebarProps {
   categories: Category[];
@@ -29,6 +22,8 @@ interface SidebarProps {
   onCloseMobile: () => void;
 }
 
+const sectionLabel = 'px-3 font-mono text-[10px] uppercase tracking-widest text-ink-3';
+
 export const Sidebar: React.FC<SidebarProps> = ({
   categories,
   selectedCategory,
@@ -46,13 +41,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   onCloseMobile
 }) => {
+  const navItem = (active: boolean) =>
+    `w-full flex items-center justify-between px-3 py-2 border-l-2 text-sm transition-colors duration-150 text-left ${
+      active
+        ? 'border-accent text-accent font-medium'
+        : 'border-transparent text-ink-2 hover:text-ink hover:bg-surface/60'
+    }`;
+
   const content = (
     <div className="flex flex-col h-full space-y-6 text-sm">
       {/* Primary Navigation Views */}
-      <div className="space-y-1">
-        <div className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">
-          Views
-        </div>
+      <div className="space-y-0.5">
+        <div className={`${sectionLabel} py-1`} id="sidebar-views-label">Views</div>
         <button
           id="nav-all-resources"
           onClick={() => {
@@ -61,19 +61,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onSelectCategory('all');
             onCloseMobile();
           }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            !onlyFavorites && !showRecentOnly && selectedCategory === 'all'
-              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
+          className={navItem(!onlyFavorites && !showRecentOnly && selectedCategory === 'all')}
         >
-          <div className="flex items-center gap-2.5">
+          <span className="flex items-center gap-2.5">
             <Layers className="w-4 h-4" />
             <span>All Resources</span>
-          </div>
-          <span className="text-xs px-1.5 py-0.5 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-            {totalCount}
           </span>
+          <span className="font-mono text-xs text-ink-3">{totalCount}</span>
         </button>
 
         <button
@@ -83,21 +77,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onToggleRecent(false);
             onCloseMobile();
           }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            onlyFavorites
-              ? 'bg-amber-500 text-stone-950 font-semibold shadow-sm'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
+          className={navItem(onlyFavorites)}
         >
-          <div className="flex items-center gap-2.5">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+          <span className="flex items-center gap-2.5">
+            <Star className="w-4 h-4" />
             <span>Starred / Bookmarks</span>
-          </div>
-          <span className="text-xs px-1.5 py-0.5 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300">
-            {favoritesCount}
           </span>
+          <span className="font-mono text-xs text-ink-3">{favoritesCount}</span>
         </button>
-
 
         <button
           id="nav-recently-added"
@@ -106,74 +93,65 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onToggleFavorites(false);
             onCloseMobile();
           }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg font-medium transition-colors ${
-            showRecentOnly
-              ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-              : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-          }`}
+          className={navItem(showRecentOnly)}
         >
-          <div className="flex items-center gap-2.5">
+          <span className="flex items-center gap-2.5">
             <Clock className="w-4 h-4" />
             <span>Recently Added</span>
-          </div>
+          </span>
         </button>
       </div>
 
       {/* Categories List */}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <div className="flex items-center justify-between px-3 py-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
             Categories
           </span>
           <button
             id="add-category-sidebar-btn"
             onClick={onOpenAddCategoryModal}
-            className="text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100 p-1 rounded hover:bg-stone-200/50 dark:hover:bg-stone-800"
-            title="Add custom category"
+            aria-label="Add custom category"
+            className="p-1 rounded-md text-ink-3 hover:text-ink hover:bg-surface transition-colors duration-150"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="space-y-0.5">
-          {categories.map((cat) => {
-            const isSelected =
-              !onlyFavorites && !showRecentOnly && selectedCategory === cat.id;
-            const count = categoryCounts[cat.id] || 0;
+        {categories.map((cat) => {
+          const isSelected = !onlyFavorites && !showRecentOnly && selectedCategory === cat.id;
+          const count = categoryCounts[cat.id] || 0;
+          const tone = toneOf(cat.color);
 
-            return (
-              <button
-                key={cat.id}
-                id={`cat-nav-${cat.id}`}
-                onClick={() => {
-                  onSelectCategory(cat.id);
-                  onToggleFavorites(false);
-                  onToggleRecent(false);
-                  onCloseMobile();
-                }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                  isSelected
-                    ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900 font-semibold'
-                    : 'text-stone-700 hover:bg-stone-100 dark:text-stone-300 dark:hover:bg-stone-800/60'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <CategoryIcon name={cat.iconName} className="w-4 h-4 shrink-0 opacity-80" />
-                  <span className="truncate">{cat.name}</span>
-                </div>
-                <span className="text-[11px] px-1.5 py-0.2 rounded-full bg-stone-200/70 text-stone-700 dark:bg-stone-800 dark:text-stone-300 shrink-0">
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+          return (
+            <button
+              key={cat.id}
+              id={`cat-nav-${cat.id}`}
+              onClick={() => {
+                onSelectCategory(cat.id);
+                onToggleFavorites(false);
+                onToggleRecent(false);
+                onCloseMobile();
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 border-l-2 text-xs transition-colors duration-150 text-left ${
+                isSelected
+                  ? `${tone.bg} ${tone.text} ${tone.border} font-medium`
+                  : 'border-transparent text-ink-2 hover:text-ink hover:bg-surface/60'
+              }`}
+            >
+              <span className="flex items-center gap-2 truncate">
+                <CategoryIcon name={cat.iconName} className={`w-4 h-4 shrink-0 ${isSelected ? '' : tone.text}`} />
+                <span className="truncate">{cat.name}</span>
+              </span>
+              <span className={`font-mono text-xs shrink-0 ${isSelected ? '' : 'text-ink-3'}`}>{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Pricing Filters */}
       <div className="space-y-2">
-        <div className="px-3 text-[11px] font-bold uppercase tracking-wider text-stone-600 dark:text-stone-300 flex items-center gap-1.5">
-          <CreditCard className="w-3.5 h-3.5" />
+        <div className={`${sectionLabel} flex items-center gap-1.5 py-1`}>
           <span>Pricing Model</span>
         </div>
         <div className="grid grid-cols-2 gap-1 px-1">
@@ -182,10 +160,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={model}
               id={`filter-pricing-${model.toLowerCase()}`}
               onClick={() => onSelectPricing(model)}
-              className={`px-2.5 py-1.5 text-xs font-medium rounded-md border text-center transition-all ${
+              className={`px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wider rounded-md border text-center transition-colors duration-150 ${
                 selectedPricing === model
-                  ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-500 dark:bg-indigo-950/70 dark:text-indigo-200 font-semibold'
-                  : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-100 dark:hover:bg-stone-800'
+                  ? 'border-accent bg-accent-soft text-accent font-medium'
+                  : 'border-hairline text-ink-2 hover:border-hairline-2 hover:text-ink'
               }`}
             >
               {model === 'all' ? 'All Prices' : model}
@@ -198,24 +176,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <>
-      {/* Desktop Persistent Sidebar */}
-      <aside className="hidden md:block w-64 shrink-0 border-r border-stone-200 dark:border-stone-800 p-4 bg-stone-50/50 dark:bg-stone-900/30 min-h-[calc(100vh-4rem)]">
+      {/* Desktop rail */}
+      <aside className="hidden md:block w-64 shrink-0 border-r border-hairline p-4 bg-paper min-h-[calc(100vh-4rem)]">
         {content}
       </aside>
 
-      {/* Mobile Drawer */}
+      {/* Mobile drawer */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-ink/50"
             onClick={onCloseMobile}
+            aria-hidden="true"
           />
-          <div className="relative w-72 max-w-full bg-white dark:bg-stone-950 p-5 shadow-2xl overflow-y-auto flex flex-col justify-between">
-            <div className="flex items-center justify-between pb-4 border-b border-stone-200 dark:border-stone-800 mb-4">
-              <span className="font-bold text-stone-900 dark:text-stone-100">Filters & Navigation</span>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Filters & Navigation"
+            className="relative w-72 max-w-full bg-paper p-5 shadow-overlay overflow-y-auto flex flex-col"
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-hairline mb-4">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
+                Filters &amp; Navigation
+              </span>
               <button
                 onClick={onCloseMobile}
-                className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-500"
+                aria-label="Close filters"
+                className="p-1 rounded-md hover:bg-surface text-ink-3 hover:text-ink transition-colors duration-150"
               >
                 <X className="w-5 h-5" />
               </button>

@@ -1,13 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Search,
-  X,
-  ArrowUpDown,
-  LayoutGrid,
-  List,
-  Filter,
-  SlidersHorizontal
-} from 'lucide-react';
+import { Search, X, ArrowUpDown, LayoutGrid, List, Filter } from 'lucide-react';
 import { SortOption } from '../types/resource';
 
 interface SearchBarProps {
@@ -41,10 +33,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut '/' or 'cmd+k'
+  // Keyboard shortcut '/' — only when not typing in any editable element
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === '/' && document.activeElement !== inputRef.current) {
+      const el = document.activeElement;
+      const isEditing =
+        el instanceof HTMLInputElement ||
+        el instanceof HTMLTextAreaElement ||
+        (el instanceof HTMLElement && el.isContentEditable);
+      if (e.key === '/' && !isEditing) {
         e.preventDefault();
         inputRef.current?.focus();
       }
@@ -57,95 +54,92 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     activeCategoryName || (activePricing && activePricing !== 'all') || activeBestForFilter || searchQuery
   );
 
+  const chip = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border font-mono text-[10px] uppercase tracking-wider';
+  const controlBtn = 'p-1.5 rounded-md transition-colors duration-150';
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-        {/* Search input field */}
+        {/* Search input */}
         <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ink-3">
             <Search className="w-4 h-4" />
           </div>
           <input
             ref={inputRef}
             id="global-search-input"
             type="text"
+            aria-label="Search tools"
             placeholder="Search tools by name, category, use case, 'best for'..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-12 py-2 text-sm rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 transition-all shadow-xs"
+            className="w-full pl-9 pr-10 py-2 text-sm rounded-md border border-hairline-2 bg-raised text-ink placeholder:text-ink-3 hover:border-ink-3 transition-colors duration-150"
           />
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
+          <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center gap-1">
             {searchQuery ? (
               <button
                 onClick={() => onSearchChange('')}
-                className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 p-0.5"
-                title="Clear search"
+                aria-label="Clear search"
+                className="text-ink-3 hover:text-ink p-0.5 rounded transition-colors duration-150"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             ) : (
-              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 hidden sm:inline-block">
+              <kbd className="hidden sm:inline-block font-mono text-[10px] px-1.5 py-0.5 rounded border border-hairline-2 text-ink-3">
                 /
-              </span>
+              </kbd>
             )}
           </div>
         </div>
 
-        {/* Controls: Sort & View & Mobile Filters */}
+        {/* Sort / view / mobile filters */}
         <div className="flex items-center gap-2 self-end sm:self-auto">
-          {/* Mobile Filter Trigger */}
           <button
             id="mobile-filters-trigger"
             onClick={onOpenMobileFilters}
-            className="md:hidden flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 shadow-xs"
+            className="md:hidden flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-md border border-hairline-2 text-ink-2 hover:text-ink hover:border-ink-3 transition-colors duration-150"
           >
             <Filter className="w-3.5 h-3.5" />
             <span>Filters</span>
           </button>
 
-          {/* Sort Selector */}
-          <div className="relative flex items-center">
-            <div className="relative">
-              <select
-                id="sort-select"
-                value={sortBy}
-                onChange={(e) => onSortChange(e.target.value as SortOption)}
-                aria-label="Sort resources by"
-                className="appearance-none pl-8 pr-7 py-2 text-xs font-medium rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/80 cursor-pointer shadow-xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500/30"
-              >
-                <option value="recent">Recently Added</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-                <option value="rating">Top Rated</option>
-                <option value="favorites">Bookmarks First</option>
-              </select>
-              <ArrowUpDown className="w-3.5 h-3.5 text-stone-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+          <div className="relative">
+            <ArrowUpDown className="w-3.5 h-3.5 text-ink-3 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <select
+              id="sort-select"
+              aria-label="Sort resources by"
+              value={sortBy}
+              onChange={(e) => onSortChange(e.target.value as SortOption)}
+              className="appearance-none pl-8 pr-3 py-2 text-xs rounded-md border border-transparent bg-surface text-ink-2 hover:text-ink transition-colors duration-150"
+            >
+              <option value="recent">Recently Added</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="rating">Top Rated</option>
+              <option value="favorites">Bookmarks First</option>
+            </select>
           </div>
 
-          {/* Grid / List View Toggle */}
-          <div className="flex items-center p-0.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-xs">
+          <div className="flex items-center rounded-md border border-hairline-2 overflow-hidden" role="group" aria-label="View mode">
             <button
               id="view-grid-btn"
               onClick={() => onViewModeChange('grid')}
-              className={`p-1.5 rounded-lg transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-                  : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+              aria-pressed={viewMode === 'grid'}
+              aria-label="Grid View"
+              className={`${controlBtn} ${
+                viewMode === 'grid' ? 'bg-ink text-paper' : 'text-ink-3 hover:text-ink hover:bg-surface'
               }`}
-              title="Grid View"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               id="view-list-btn"
               onClick={() => onViewModeChange('list')}
-              className={`p-1.5 rounded-lg transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-stone-900 text-white dark:bg-stone-100 dark:text-stone-900'
-                  : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+              aria-pressed={viewMode === 'list'}
+              aria-label="Compact List View"
+              className={`${controlBtn} ${
+                viewMode === 'list' ? 'bg-ink text-paper' : 'text-ink-3 hover:text-ink hover:bg-surface'
               }`}
-              title="Compact List View"
             >
               <List className="w-4 h-4" />
             </button>
@@ -153,19 +147,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         </div>
       </div>
 
-      {/* Active Filter Chips & Result Counter */}
-      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-stone-500 dark:text-stone-400">
+      {/* Active filter chips & result counter */}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-2">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="font-medium text-stone-700 dark:text-stone-300">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-ink-3">
             {resultCount} {resultCount === 1 ? 'tool' : 'tools'}
           </span>
 
           {activeCategoryName && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 border border-stone-200 dark:border-stone-700">
+            <span className={`${chip} border-hairline-2 bg-surface text-ink-2`}>
               <span>Category: {activeCategoryName}</span>
               <button
                 onClick={() => onClearFilter('category')}
-                className="hover:text-stone-950 dark:hover:text-white"
+                aria-label={`Clear category filter: ${activeCategoryName}`}
+                className="hover:text-ink transition-colors duration-150"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -173,11 +168,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           )}
 
           {activePricing && activePricing !== 'all' && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+            <span className={`${chip} border-hairline-2 bg-surface text-ink-2`}>
               <span>Pricing: {activePricing}</span>
               <button
                 onClick={() => onClearFilter('pricing')}
-                className="hover:text-amber-950 dark:hover:text-white"
+                aria-label={`Clear pricing filter: ${activePricing}`}
+                className="hover:text-ink transition-colors duration-150"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -185,11 +181,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           )}
 
           {activeBestForFilter && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <span className={`${chip} border-accent/40 bg-accent-soft text-accent`}>
               <span>Decision: {activeBestForFilter}</span>
               <button
                 onClick={() => onClearFilter('bestFor')}
-                className="hover:text-emerald-950 dark:hover:text-white"
+                aria-label={`Clear decision filter: ${activeBestForFilter}`}
+                className="hover:text-accent-hover transition-colors duration-150"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -199,7 +196,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           {hasActiveFilters && (
             <button
               onClick={() => onClearFilter('all')}
-              className="text-stone-500 hover:text-stone-900 dark:hover:text-stone-200 underline ml-1"
+              className="text-ink-3 hover:text-ink underline underline-offset-2 ml-1 transition-colors duration-150"
             >
               Reset all
             </button>

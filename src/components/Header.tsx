@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Plus,
   Moon,
@@ -8,8 +8,6 @@ import {
   Upload,
   RotateCcw,
   Sparkles,
-  Search,
-  BookMarked
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -38,101 +36,116 @@ export const Header: React.FC<HeaderProps> = ({
   totalFavorites
 }) => {
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the data menu on Escape as well as outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
+
+  const iconBtn = 'p-2 rounded-md text-ink-2 hover:text-ink hover:bg-surface transition-colors duration-150 disabled:opacity-40 disabled:pointer-events-none';
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b backdrop-blur-md transition-colors duration-200 border-stone-200 bg-white/90 dark:border-stone-800 dark:bg-stone-950/90">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Logo & Brand */}
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 via-blue-600 to-sky-500 p-0.5 shadow-sm flex items-center justify-center text-white">
-            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+    <header className="sticky top-0 z-30 w-full border-b border-hairline bg-paper/95 backdrop-blur-sm">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Brand */}
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="h-9 w-9 rounded-md bg-accent text-on-accent flex items-center justify-center shrink-0">
+            <Sparkles className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-stone-900 dark:text-stone-100">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-2">
+              <h1 className="font-display text-xl font-semibold tracking-tight text-ink truncate">
                 Resource Hub
               </h1>
-              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+              <span className="hidden sm:inline-block rounded-sm border border-hairline-2 px-1.5 font-mono text-[10px] uppercase tracking-widest text-ink-3">
                 Library
               </span>
             </div>
-            <p className="text-xs text-stone-500 dark:text-stone-400 hidden sm:block">
-              Decision & bookmark engine for developer & AI tools
+            <p className="text-xs text-ink-3 truncate hidden sm:block">
+              Decision &amp; bookmark engine for developer &amp; AI tools
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Compare Toolbar Indicator */}
+        {/* Actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {compareCount > 0 && (
             <button
               id="compare-modal-btn"
               onClick={onOpenCompare}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all bg-amber-500 text-stone-950 hover:bg-amber-400 shadow-sm animate-bounce"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors duration-150 bg-accent-soft text-accent hover:bg-accent hover:text-on-accent"
             >
               <Scale className="w-3.5 h-3.5" />
               <span>Compare ({compareCount})</span>
             </button>
           )}
 
-          {/* Add Resource Button */}
           <button
             id="add-resource-btn"
             onClick={onOpenAddModal}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-stone-900 text-white hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-md bg-accent text-on-accent hover:bg-accent-hover active:translate-y-px transition-[colors,transform] duration-150"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden xs:inline">Add Resource</span>
+            <span className="hidden sm:inline">Add Resource</span>
           </button>
 
-          {/* Settings / Data Menu */}
-          <div className="relative">
+          {/* Data menu */}
+          <div className="relative" ref={menuRef}>
             <button
               id="data-menu-trigger"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:bg-stone-800 transition-colors"
-              title="Library options & data management"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              className={iconBtn}
             >
-              <div className="w-4 h-4 flex flex-col justify-center items-center gap-0.5">
-                <span className="w-3.5 h-0.5 bg-current rounded"></span>
-                <span className="w-3.5 h-0.5 bg-current rounded"></span>
-                <span className="w-3.5 h-0.5 bg-current rounded"></span>
+              <div className="w-4 h-4 flex flex-col justify-center items-center gap-0.5" aria-hidden="true">
+                <span className="w-3.5 h-px bg-current rounded" />
+                <span className="w-3.5 h-px bg-current rounded" />
+                <span className="w-3.5 h-px bg-current rounded" />
               </div>
             </button>
 
             {menuOpen && (
               <>
+                <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} aria-hidden="true" />
                 <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setMenuOpen(false)}
-                />
-                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-xl py-1.5 z-50 text-xs text-stone-700 dark:text-stone-300">
-                  <div className="px-3 py-1.5 border-b border-stone-100 dark:border-stone-800 font-medium text-stone-500 dark:text-stone-400 text-[11px]">
+                  role="menu"
+                  className="absolute right-0 mt-2 w-56 rounded-lg border border-hairline bg-raised shadow-overlay py-1.5 z-50 text-xs text-ink-2"
+                >
+                  <div className="px-3 py-1.5 border-b border-hairline font-mono text-[10px] uppercase tracking-widest text-ink-3">
                     Library: {totalResources} items · {totalFavorites} starred
                   </div>
                   <button
+                    role="menuitem"
                     onClick={() => {
                       onExportData();
                       setMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 hover:bg-surface hover:text-ink flex items-center gap-2 transition-colors duration-150"
                   >
-                    <Download className="w-3.5 h-3.5 text-stone-500" />
+                    <Download className="w-3.5 h-3.5" />
                     <span>Export Library (JSON)</span>
                   </button>
                   <button
+                    role="menuitem"
                     onClick={() => {
                       onImportClick();
                       setMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-stone-100 dark:hover:bg-stone-800 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 hover:bg-surface hover:text-ink flex items-center gap-2 transition-colors duration-150"
                   >
-                    <Upload className="w-3.5 h-3.5 text-stone-500" />
+                    <Upload className="w-3.5 h-3.5" />
                     <span>Import Library (JSON)</span>
                   </button>
-                  <div className="border-t border-stone-100 dark:border-stone-800 my-1"></div>
+                  <div className="border-t border-hairline my-1" />
                   <button
+                    role="menuitem"
                     onClick={() => {
                       if (
                         window.confirm(
@@ -143,7 +156,7 @@ export const Header: React.FC<HeaderProps> = ({
                       }
                       setMenuOpen(false);
                     }}
-                    className="w-full text-left px-3 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-danger hover:bg-danger-soft flex items-center gap-2 transition-colors duration-150"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>Reset to Seed Defaults</span>
@@ -153,15 +166,14 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Dark / Light Toggle */}
           <button
             id="theme-toggle-btn"
             onClick={onToggleDarkMode}
-            className="p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 dark:text-stone-400 dark:hover:text-stone-100 dark:hover:bg-stone-800 transition-colors"
+            className={iconBtn}
             title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             aria-label="Toggle theme"
           >
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-stone-700" />}
+            {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
         </div>
       </div>

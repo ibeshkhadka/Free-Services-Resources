@@ -1,30 +1,172 @@
 @import "tailwindcss";
 
+/* The app toggles a .dark class on <html>; wire the dark: variant to it. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   DOCKET — design tokens (single source of truth)
+   Components must reference these via utilities
+   (bg-paper, text-ink-2, border-hairline, ...). No raw hex
+   outside this file. Spacing uses Tailwind's 4px scale.
+   Type scale (6 steps): xs 12 / sm 14 / base 16 / lg 18 / xl 20 / 2xl 24
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --paper: #faf9f6;        /* page ground */
+  --surface: #f3efe7;      /* recessed panels, tiles */
+  --raised: #ffffff;       /* cards, sheets */
+
+  /* Text */
+  --ink: #1c1917;          /* primary — 16.1:1 on paper */
+  --ink-2: #57534e;        /* secondary — 6.8:1 on paper */
+  --ink-3: #79716b;        /* labels/meta — 4.6:1 on paper */
+
+  /* Lines */
+  --hairline: #e4ded2;
+  --hairline-2: #c9c1b0;
+
+  /* Accents: green = selection & primary actions; sienna = favorites;
+     danger = destructive only. Exactly two accent hues. */
+  --accent: #1f5f3f;
+  --accent-hover: #164a2f;
+  --accent-soft: #e6efe8;
+  --on-accent: #fbfaf7;
+
+  --sienna: #b4540a;
+  --sienna-soft: #f6e8d9;
+
+  --danger: #a1352c;
+  --danger-soft: #f7e5e2;
+
+  --ring: #1f5f3f;
+
+  /* Elevation — restrained: hairlines do most of the work */
+  --elev-rest: 0 1px 2px rgba(28, 25, 23, 0.06);
+  --elev-overlay: 0 16px 40px rgba(28, 25, 23, 0.16);
+
+  /* Category hues — color carries meaning (each category owns a hue) */
+  --hue-emerald: #0e7a5f;  --hue-emerald-soft: #e2f3ec;
+  --hue-indigo: #4356d6;   --hue-indigo-soft: #e8eafc;
+  --hue-purple: #8347c9;   --hue-purple-soft: #f1e9fb;
+  --hue-amber: #b45309;    --hue-amber-soft: #fbeedd;
+  --hue-blue: #0b6bcb;     --hue-blue-soft: #e2effb;
+}
+
+.dark {
+  --paper: #161412;
+  --surface: #1e1b17;
+  --raised: #26221d;
+
+  --ink: #ede8df;
+  --ink-2: #a8a099;
+  --ink-3: #8a837b;
+
+  --hairline: #322e28;
+  --hairline-2: #474139;
+
+  --accent: #6fbf94;
+  --accent-hover: #8bd2a9;
+  --accent-soft: #1d2a22;
+  --on-accent: #10241a;
+
+  --sienna: #e09a5b;
+  --sienna-soft: #2c2118;
+
+  --danger: #e07b72;
+  --danger-soft: #2e1b18;
+
+  --ring: #6fbf94;
+
+  --elev-rest: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --elev-overlay: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  --hue-emerald: #4ed0a5;  --hue-emerald-soft: #12312a;
+  --hue-indigo: #98a4f5;   --hue-indigo-soft: #1d2247;
+  --hue-purple: #c48ff0;   --hue-purple-soft: #2a1d3e;
+  --hue-amber: #f0a24f;    --hue-amber-soft: #33230f;
+  --hue-blue: #6fb1f0;     --hue-blue-soft: #14283f;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-hairline: var(--hairline);
+  --color-hairline-2: var(--hairline-2);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
+  --color-sienna: var(--sienna);
+  --color-sienna-soft: var(--sienna-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-ring: var(--ring);
+
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --shadow-rest: var(--elev-rest);
+  --shadow-overlay: var(--elev-overlay);
+
+  --color-hue-emerald: var(--hue-emerald);
+  --color-hue-emerald-soft: var(--hue-emerald-soft);
+  --color-hue-indigo: var(--hue-indigo);
+  --color-hue-indigo-soft: var(--hue-indigo-soft);
+  --color-hue-purple: var(--hue-purple);
+  --color-hue-purple-soft: var(--hue-purple-soft);
+  --color-hue-amber: var(--hue-amber);
+  --color-hue-amber-soft: var(--hue-amber-soft);
+  --color-hue-blue: var(--hue-blue);
+  --color-hue-blue-soft: var(--hue-blue-soft);
+}
+
 @layer base {
   :root {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
   }
 
   code, pre, .font-mono {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
+  }
+
+  /* Visible keyboard focus on every interactive element */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Motion is functional only; honor user preference */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* Custom scrollbar — token-aware so it works in dark mode */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--hairline-2); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+/* Functional mount animation (opacity/transform only, 200ms ease-out) */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.4);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(156, 163, 175, 0.7);
+.animate-rise {
+  animation: rise-in 200ms ease-out;
 }

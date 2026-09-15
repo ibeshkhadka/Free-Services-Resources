@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Resource, Category, PricingModel } from '../types/resource';
-import { X, Sparkles } from 'lucide-react';
+import { Modal, ModalHeader } from './ui/Modal';
 
 interface ResourceFormModalProps {
   isOpen: boolean;
@@ -9,6 +9,9 @@ interface ResourceFormModalProps {
   initialData?: Resource | null;
   categories: Category[];
 }
+
+const inputClass = 'w-full px-3 py-2 text-sm rounded-md border border-hairline-2 bg-raised text-ink placeholder:text-ink-3 transition-colors duration-150';
+const labelClass = 'block font-mono text-[10px] uppercase tracking-widest text-ink-3 mb-1.5';
 
 export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
   isOpen,
@@ -57,19 +60,27 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
     }
   }, [initialData, categories, isOpen]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !websiteUrl.trim()) {
+    const url = websiteUrl.trim();
+    if (!name.trim() || !url) {
       alert('Please provide a tool name and website URL.');
+      return;
+    }
+    // Only http(s) URLs are rendered into <a href> elsewhere — reject
+    // anything else (including javascript: URLs) at entry.
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new Error('bad scheme');
+    } catch {
+      alert('Website URL must be a valid http(s) URL.');
       return;
     }
 
     onSave({
       id: initialData?.id,
       name: name.trim(),
-      websiteUrl: websiteUrl.trim(),
+      websiteUrl: url,
       categoryId: categoryId || categories[0]?.id || 'baas',
       iconSymbol: iconSymbol.trim() || '⚡',
       shortDescription: shortDescription.trim(),
@@ -85,224 +96,215 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div
-        className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
+    <Modal
+      id="resource-form-modal"
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={initialData ? `Edit Resource: ${initialData.name}` : 'Add New Tool to Library'}
+    >
+      <ModalHeader
+        title={initialData ? `Edit Resource: ${initialData.name}` : 'Add New Tool to Library'}
+        onClose={onClose}
+        closeLabel="Cancel"
       />
 
-      <div
-        id="resource-form-modal"
-        className="relative w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-auto z-10 max-h-[92vh] flex flex-col"
-      >
-        {/* Header */}
-        <div className="p-5 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🛠️</span>
-            <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">
-              {initialData ? `Edit Resource: ${initialData.name}` : 'Add New Tool to Library'}
-            </h2>
+      <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-5">
+        {/* Row 1: Name, Icon & Category */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+          <div className="sm:col-span-2">
+            <label htmlFor="form-icon" className={labelClass}>
+              Icon / Emoji
+            </label>
+            <input
+              id="form-icon"
+              type="text"
+              maxLength={4}
+              value={iconSymbol}
+              onChange={(e) => setIconSymbol(e.target.value)}
+              className={`${inputClass} text-center text-base`}
+              placeholder="⚡"
+            />
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
-          >
-            <X className="w-5 h-5" />
-          </button>
+
+          <div className="sm:col-span-5">
+            <label htmlFor="form-name" className={labelClass}>
+              Tool Name *
+            </label>
+            <input
+              id="form-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={inputClass}
+              placeholder="e.g. Supabase, Claude Code, v0"
+            />
+          </div>
+
+          <div className="sm:col-span-5">
+            <label htmlFor="form-category" className={labelClass}>
+              Category *
+            </label>
+            <select
+              id="form-category"
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className={inputClass}
+            >
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-4 text-xs">
-          {/* Row 1: Name, Icon & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Icon / Emoji
-              </label>
-              <input
-                type="text"
-                maxLength={4}
-                value={iconSymbol}
-                onChange={(e) => setIconSymbol(e.target.value)}
-                className="w-full text-center py-2 text-base rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
-                placeholder="⚡"
-              />
-            </div>
-
-            <div className="sm:col-span-5">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Tool Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-                placeholder="e.g. Supabase, Claude Code, v0"
-              />
-            </div>
-
-            <div className="sm:col-span-5">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Category *
-              </label>
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Row 2: Website URL & Pricing */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-7">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Website URL *
-              </label>
-              <input
-                type="url"
-                required
-                value={websiteUrl}
-                onChange={(e) => setWebsiteUrl(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-                placeholder="https://example.com"
-              />
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Pricing
-              </label>
-              <select
-                value={pricing}
-                onChange={(e) => setPricing(e.target.value as PricingModel)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100"
-              >
-                <option value="Free">Free</option>
-                <option value="Freemium">Freemium</option>
-                <option value="Paid">Paid</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-3">
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Pricing Details
-              </label>
-              <input
-                type="text"
-                value={pricingDetails}
-                onChange={(e) => setPricingDetails(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-                placeholder="e.g. Free tier, Pro $20/mo"
-              />
-            </div>
-          </div>
-
-          {/* Row 3: "Best For" Decision Badge (High Priority) */}
-          <div className="p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50">
-            <label className="block font-bold text-indigo-900 dark:text-indigo-200 mb-1">
-              🎯 "Best For" Field (Decision Recommendation) *
+        {/* Row 2: Website URL & Pricing */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+          <div className="sm:col-span-7">
+            <label htmlFor="form-url" className={labelClass}>
+              Website URL *
             </label>
             <input
-              type="text"
+              id="form-url"
+              type="url"
               required
-              value={bestFor}
-              onChange={(e) => setBestFor(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-              placeholder="e.g. Best database experience & rapid SQL MVPs"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              className={`${inputClass} font-mono text-xs`}
+              placeholder="https://example.com"
             />
-            <p className="text-[10px] text-stone-500 dark:text-stone-400 mt-1">
-              This powers decision-oriented browsing so you know immediately which tool to pick.
-            </p>
           </div>
 
-          {/* Row 4: Short Description */}
-          <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Short Description *
+          <div className="sm:col-span-2">
+            <label htmlFor="form-pricing" className={labelClass}>
+              Pricing
             </label>
-            <textarea
-              required
-              rows={2}
-              value={shortDescription}
-              onChange={(e) => setShortDescription(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-              placeholder="One or two sentences explaining what the tool does..."
-            />
+            <select
+              id="form-pricing"
+              value={pricing}
+              onChange={(e) => setPricing(e.target.value as PricingModel)}
+              className={inputClass}
+            >
+              <option value="Free">Free</option>
+              <option value="Freemium">Freemium</option>
+              <option value="Paid">Paid</option>
+            </select>
           </div>
 
-          {/* Row 5: Main Use Case */}
-          <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Main Use Case
+          <div className="sm:col-span-3">
+            <label htmlFor="form-pricing-details" className={labelClass}>
+              Pricing Details
             </label>
             <input
+              id="form-pricing-details"
               type="text"
-              value={mainUseCase}
-              onChange={(e) => setMainUseCase(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-              placeholder="e.g. Full-stack application backend with relational database power."
+              value={pricingDetails}
+              onChange={(e) => setPricingDetails(e.target.value)}
+              className={inputClass}
+              placeholder="e.g. Free tier, Pro $20/mo"
             />
           </div>
+        </div>
 
-          {/* Row 6: Personal Notes */}
-          <div>
-            <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-              Personal Notes & Impressions
-            </label>
-            <textarea
-              rows={2}
-              value={personalNotes}
-              onChange={(e) => setPersonalNotes(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 placeholder-stone-400"
-              placeholder="Your honest thoughts, testing experience, or project ideas..."
-            />
-          </div>
+        {/* Row 3: "Best For" (decision recommendation) */}
+        <div className="border-l-2 border-accent pl-4 py-1">
+          <label htmlFor="form-best-for" className={`${labelClass} text-accent`}>
+            "Best For" Field (Decision Recommendation) *
+          </label>
+          <input
+            id="form-best-for"
+            type="text"
+            required
+            value={bestFor}
+            onChange={(e) => setBestFor(e.target.value)}
+            className={inputClass}
+            placeholder="e.g. Best database experience & rapid SQL MVPs"
+          />
+        </div>
 
-          {/* Bookmark Checkbox */}
-          <div className="flex items-center gap-2 pt-1">
-            <input
-              type="checkbox"
-              id="form-is-favorite"
-              checked={isFavorite}
-              onChange={(e) => setIsFavorite(e.target.checked)}
-              className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-stone-300"
-            />
-            <label
-              htmlFor="form-is-favorite"
-              className="font-medium text-stone-700 dark:text-stone-300 cursor-pointer"
-            >
-              Star / Bookmark this tool immediately
-            </label>
-          </div>
+        {/* Row 4: Short Description */}
+        <div>
+          <label htmlFor="form-description" className={labelClass}>
+            Short Description *
+          </label>
+          <textarea
+            id="form-description"
+            required
+            rows={2}
+            value={shortDescription}
+            onChange={(e) => setShortDescription(e.target.value)}
+            className={inputClass}
+            placeholder="One or two sentences explaining what the tool does..."
+          />
+        </div>
 
-          {/* Footer Submit */}
-          <div className="pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-2.5">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              id="save-resource-btn"
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-stone-900 text-white hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white font-semibold shadow-xs"
-            >
-              {initialData ? 'Save Changes' : 'Add to Library'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Row 5: Main Use Case */}
+        <div>
+          <label htmlFor="form-use-case" className={labelClass}>
+            Main Use Case
+          </label>
+          <input
+            id="form-use-case"
+            type="text"
+            value={mainUseCase}
+            onChange={(e) => setMainUseCase(e.target.value)}
+            className={inputClass}
+            placeholder="e.g. Full-stack application backend with relational database power."
+          />
+        </div>
+
+        {/* Row 6: Personal Notes */}
+        <div>
+          <label htmlFor="form-notes" className={labelClass}>
+            Personal Notes &amp; Impressions
+          </label>
+          <textarea
+            id="form-notes"
+            rows={2}
+            value={personalNotes}
+            onChange={(e) => setPersonalNotes(e.target.value)}
+            className={inputClass}
+            placeholder="Your honest thoughts, testing experience, or project ideas..."
+          />
+        </div>
+
+        {/* Bookmark checkbox */}
+        <div className="flex items-center gap-2 pt-1">
+          <input
+            type="checkbox"
+            id="form-is-favorite"
+            checked={isFavorite}
+            onChange={(e) => setIsFavorite(e.target.checked)}
+            className="w-4 h-4 rounded accent-[var(--accent)]"
+          />
+          <label
+            htmlFor="form-is-favorite"
+            className="text-sm text-ink-2 cursor-pointer"
+          >
+            Star / Bookmark this tool immediately
+          </label>
+        </div>
+
+        {/* Footer */}
+        <div className="pt-4 border-t border-hairline flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-md border border-hairline-2 text-ink-2 hover:text-ink hover:border-ink-3 text-sm font-medium transition-colors duration-150"
+          >
+            Cancel
+          </button>
+          <button
+            id="save-resource-btn"
+            type="submit"
+            className="px-5 py-2 rounded-md bg-accent text-on-accent hover:bg-accent-hover text-sm font-medium transition-colors duration-150"
+          >
+            {initialData ? 'Save Changes' : 'Add to Library'}
+          </button>
+        </div>
+      </form>
+    </Modal>
   );
 };

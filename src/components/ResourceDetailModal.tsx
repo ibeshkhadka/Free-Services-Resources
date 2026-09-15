@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Resource, Category } from '../types/resource';
 import {
-  X,
   ExternalLink,
   Star,
   Calendar,
-  CreditCard,
-  Target,
   FileText,
-  Trash2,
   Edit3,
   Copy,
   Check,
-  Scale
+  Scale,
 } from 'lucide-react';
-import { CategoryIcon } from './CategoryIcon';
+import { Modal } from './ui/Modal';
+import { PricingBadge } from './ui/PricingBadge';
+import { IconTile } from './ui/IconTile';
+import { IconButton } from './ui/IconButton';
 
 interface ResourceDetailModalProps {
   resource: Resource | null;
@@ -45,12 +44,26 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
   const [editingNotes, setEditingNotes] = useState(false);
   const [notesDraft, setNotesDraft] = useState('');
 
-  if (!isOpen || !resource) return null;
+  // Reset the notes editor whenever the viewed resource changes; the modal
+  // stays mounted while closed, so the draft would otherwise leak from the
+  // previously-opened resource onto this one (and could be saved over it).
+  useEffect(() => {
+    setEditingNotes(false);
+    setNotesDraft('');
+  }, [resource?.id]);
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(resource.websiteUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  if (!resource) return null;
+
+  const handleCopyLink = async () => {
+    // navigator.clipboard is undefined on insecure origins (e.g. LAN http);
+    // only claim success when the write actually succeeded.
+    try {
+      await navigator.clipboard.writeText(resource.websiteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard unavailable — leave the icon unchanged
+    }
   };
 
   const handleStartEditNotes = () => {
@@ -65,171 +78,147 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
     setEditingNotes(false);
   };
 
-  const pricingBadgeStyles = {
-    Free: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
-    Freemium: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
-    Paid: 'bg-stone-100 text-stone-700 border-stone-200 dark:bg-stone-800 dark:text-stone-300 dark:border-stone-700'
-  };
+  const metaLabel = 'font-mono text-[10px] uppercase tracking-widest text-ink-3';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity"
-        onClick={onClose}
-      />
+    <Modal
+      id="resource-detail-modal"
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={resource.name}
+    >
+      {/* Header */}
+      <div className="p-5 sm:p-6 border-b border-hairline flex items-start justify-between gap-4">
+        <div className="flex items-start gap-4 min-w-0">
+          <IconTile
+            glyph={resource.iconSymbol || (resource.name ? resource.name.slice(0, 2).toUpperCase() : '')}
+            size="lg"
+          />
 
-      {/* Modal Card */}
-      <div
-        id="resource-detail-modal"
-        className="relative w-full max-w-2xl bg-white dark:bg-stone-900 rounded-2xl border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-auto z-10 max-h-[90vh] flex flex-col"
-      >
-        {/* Header Bar */}
-        <div className="p-5 sm:p-6 border-b border-stone-100 dark:border-stone-800/80 flex items-start justify-between gap-4 bg-stone-50/50 dark:bg-stone-950/40">
-          <div className="flex items-start gap-4">
-            {/* Logo / Symbol */}
-            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center text-2xl shrink-0 shadow-xs">
-              {resource.iconSymbol || (resource.name ? resource.name.slice(0, 2).toUpperCase() : '⚡')}
-            </div>
-
-            <div>
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h2 className="text-xl font-bold text-stone-900 dark:text-stone-100">
-                  {resource.name}
-                </h2>
-                <span
-                  className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
-                    pricingBadgeStyles[resource.pricing] || pricingBadgeStyles.Freemium
-                  }`}
-                >
-                  {resource.pricing}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="font-display text-xl font-semibold text-ink">
+                {resource.name}
+              </h2>
+              <PricingBadge pricing={resource.pricing} />
+              {category && (
+                <span className="text-xs text-ink-3">
+                  · {category.name.split('(')[0].trim()}
                 </span>
-                {category && (
-                  <span className="text-xs px-2.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 font-medium">
-                    {category.name}
-                  </span>
-                )}
-              </div>
-
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
-                {resource.shortDescription}
-              </p>
-            </div>
-          </div>
-
-          {/* Close Button */}
-          <button
-            id="close-detail-modal-btn"
-            onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-stone-200/60 dark:hover:bg-stone-800 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Scrollable Body Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs sm:text-sm">
-          {/* Highlight "Best For" Badge */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-indigo-50/90 via-sky-50/60 to-transparent dark:from-indigo-950/60 dark:via-sky-950/30 dark:to-transparent border border-indigo-100 dark:border-indigo-900/60 flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0 mt-0.5 shadow-xs">
-              <Target className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold tracking-wider text-indigo-700 dark:text-indigo-300">
-                Decision Recommendation (Best For)
-              </div>
-              <div className="text-sm font-semibold text-stone-900 dark:text-stone-100 mt-0.5">
-                {resource.bestFor}
-              </div>
-            </div>
-          </div>
-
-          {/* Main Use Case & Pricing Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-            <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/80 dark:border-stone-800">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-stone-600 dark:text-stone-300 block mb-1">
-                Main Use Case
-              </span>
-              <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-                {resource.mainUseCase}
-              </p>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/80 dark:border-stone-800">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-stone-600 dark:text-stone-300 block mb-1 flex items-center gap-1.5">
-                <CreditCard className="w-3 h-3 text-stone-600 dark:text-stone-300" />
-                <span>Pricing Breakdown</span>
-              </span>
-              <p className="text-xs text-stone-700 dark:text-stone-300 leading-relaxed">
-                {resource.pricingDetails || `Billed under standard ${resource.pricing.toLowerCase()} tier.`}
-              </p>
-            </div>
-          </div>
-
-          {/* Personal Notes Section (Editable) */}
-          <div className="p-4 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/80 dark:border-stone-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-stone-700 dark:text-stone-300 font-bold text-xs uppercase tracking-wider">
-                <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Personal Notes & Verdict</span>
-              </div>
-              {!editingNotes ? (
-                <button
-                  onClick={handleStartEditNotes}
-                  className="text-indigo-600 dark:text-indigo-400 hover:underline text-xs font-medium flex items-center gap-1"
-                >
-                  <Edit3 className="w-3 h-3" />
-                  <span>Edit Note</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleSaveNotes}
-                  className="px-2.5 py-0.5 text-xs bg-indigo-600 text-white rounded-md font-medium"
-                >
-                  Save
-                </button>
               )}
             </div>
 
-            {editingNotes ? (
-              <textarea
-                value={notesDraft}
-                onChange={(e) => setNotesDraft(e.target.value)}
-                rows={3}
-                className="w-full p-2.5 text-xs rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
-                placeholder="Write personal impressions, production experiences, tips..."
-              />
-            ) : (
-              <p className="text-xs text-stone-600 dark:text-stone-300 italic leading-relaxed">
-                {resource.personalNotes || 'No personal notes added yet. Click edit to record your thoughts.'}
-              </p>
-            )}
-          </div>
-
-          {/* Meta Information: Date */}
-          <div className="flex items-center gap-4 text-[11px] text-stone-400 pt-2 border-t border-stone-100 dark:border-stone-800">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              <span>Added {new Date(resource.addedAt).toLocaleDateString()}</span>
-            </span>
-            {resource.websiteUrl && (
-              <span className="truncate max-w-xs text-stone-500">
-                {resource.websiteUrl}
-              </span>
-            )}
+            <p className="text-sm text-ink-2 leading-relaxed">
+              {resource.shortDescription}
+            </p>
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 sm:p-5 border-t border-stone-100 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-950/60 flex flex-wrap items-center justify-between gap-3">
-          {/* Left Actions: Delete & Edit */}
+        <button
+          id="close-detail-modal-btn"
+          onClick={onClose}
+          aria-label="Close details"
+          className="p-1.5 rounded-md text-ink-3 hover:text-ink hover:bg-surface transition-colors duration-150 shrink-0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-5 sm:p-6 overflow-y-auto space-y-6">
+        {/* Best For — typographic highlight */}
+        <div className="border-l-2 border-accent pl-4 py-1">
+          <div className={`${metaLabel} mb-1`}>
+            Decision Recommendation (Best For)
+          </div>
+          <div className="font-display text-lg text-ink">
+            {resource.bestFor}
+          </div>
+        </div>
+
+        {/* Use case & pricing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div>
+            <span className={`${metaLabel} block mb-1.5`}>
+              Main Use Case
+            </span>
+            <p className="text-sm text-ink-2 leading-relaxed">
+              {resource.mainUseCase}
+            </p>
+          </div>
+
+          <div>
+            <span className={`${metaLabel} block mb-1.5`}>
+              Pricing Breakdown
+            </span>
+            <p className="text-sm text-ink-2 leading-relaxed">
+              {resource.pricingDetails || `Billed under standard ${resource.pricing.toLowerCase()} tier.`}
+            </p>
+          </div>
+        </div>
+
+        {/* Personal notes */}
+        <div className="pt-4 border-t border-hairline space-y-2">
+          <div className="flex items-center justify-between">
+            <div className={`${metaLabel} flex items-center gap-1.5`}>
+              <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Personal Notes &amp; Verdict</span>
+            </div>
+            {!editingNotes ? (
+              <button
+                onClick={handleStartEditNotes}
+                className="text-xs font-medium text-accent hover:text-accent-hover inline-flex items-center gap-1 transition-colors duration-150"
+              >
+                <Edit3 className="w-3 h-3" aria-hidden="true" />
+                <span>Edit Note</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSaveNotes}
+                className="px-2.5 py-0.5 text-xs bg-accent text-on-accent rounded-sm font-medium hover:bg-accent-hover transition-colors duration-150"
+              >
+                Save
+              </button>
+            )}
+          </div>
+
+          {editingNotes ? (
+            <textarea
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              rows={3}
+              aria-label="Personal notes draft"
+              className="w-full p-2.5 text-sm rounded-md border border-hairline-2 bg-paper text-ink placeholder:text-ink-3 transition-colors duration-150"
+              placeholder="Write personal impressions, production experiences, tips..."
+            />
+          ) : (
+            <p className="text-sm text-ink-2 leading-relaxed">
+              {resource.personalNotes || 'No personal notes added yet. Click edit to record your thoughts.'}
+            </p>
+          )}
+        </div>
+
+        {/* Meta */}
+        <div className="flex items-center gap-4 text-xs text-ink-3 pt-4 border-t border-hairline">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-3 h-3" aria-hidden="true" />
+            <span>Added {new Date(resource.addedAt).toLocaleDateString()}</span>
+          </span>
+          {resource.websiteUrl && (
+            <span className="truncate max-w-xs font-mono text-[11px]">
+              {resource.websiteUrl}
+            </span>
+          )}
+        </div>
+
+        {/* Footer actions */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
           <div className="flex items-center gap-2">
             <button
-              id="edit-resource-modal-btn"
               onClick={() => onEdit(resource)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-hairline-2 text-ink-2 hover:text-ink hover:border-ink-3 transition-colors duration-150"
             >
-              <Edit3 className="w-3.5 h-3.5" />
+              <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Edit</span>
             </button>
             <button
@@ -240,66 +229,61 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
                   onClose();
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md text-danger hover:bg-danger-soft transition-colors duration-150"
             >
-              <Trash2 className="w-3.5 h-3.5" />
               <span>Delete</span>
             </button>
           </div>
 
-          {/* Right Actions: Compare, Favorite & External Link */}
           <div className="flex items-center gap-2">
             <button
               id="detail-compare-toggle-btn"
               onClick={() => onToggleCompare(resource)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              aria-pressed={isCompared}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors duration-150 ${
                 isCompared
-                  ? 'bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-950 dark:border-amber-700 dark:text-amber-200 font-semibold'
-                  : 'border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300'
+                  ? 'border-accent bg-accent-soft text-accent'
+                  : 'border-hairline-2 text-ink-2 hover:text-ink hover:border-ink-3'
               }`}
             >
-              <Scale className="w-3.5 h-3.5" />
+              <Scale className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{isCompared ? 'In Compare' : 'Add to Compare'}</span>
             </button>
 
             <button
               id="detail-fav-btn"
               onClick={() => onToggleFavorite(resource.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              aria-pressed={resource.isFavorite}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border transition-colors duration-150 ${
                 resource.isFavorite
-                  ? 'bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-950/60 dark:border-amber-700 dark:text-amber-300'
-                  : 'border-stone-200 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300'
+                  ? 'border-sienna/40 bg-sienna-soft text-sienna'
+                  : 'border-hairline-2 text-ink-2 hover:text-ink hover:border-ink-3'
               }`}
             >
               <Star
-                className={`w-3.5 h-3.5 ${
-                  resource.isFavorite ? 'fill-amber-400 text-amber-500' : 'text-stone-400'
-                }`}
+                className={`w-3.5 h-3.5 ${resource.isFavorite ? 'fill-sienna' : ''}`}
+                aria-hidden="true"
               />
               <span>{resource.isFavorite ? 'Bookmarked' : 'Bookmark'}</span>
             </button>
 
-            <button
-              onClick={handleCopyLink}
-              className="p-2 rounded-lg border border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
-              title="Copy URL"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-            </button>
+            <IconButton label="Copy URL" onClick={handleCopyLink}>
+              {copied ? <Check className="w-3.5 h-3.5 text-accent" /> : <Copy className="w-3.5 h-3.5" />}
+            </IconButton>
 
             <a
               id="open-website-btn"
               href={resource.websiteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg bg-stone-900 text-white hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-md bg-accent text-on-accent hover:bg-accent-hover transition-colors duration-150"
             >
               <span>Visit Website</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
             </a>
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
