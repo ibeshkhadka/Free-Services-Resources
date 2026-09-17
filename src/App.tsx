@@ -37,14 +37,12 @@ export default function App() {
   const [selectedPricing, setSelectedPricing] = useState<PricingModel | 'all'>('all');
   const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [showRecentOnly, setShowRecentOnly] = useState(false);
-  const [bestForFilter, setBestForFilter] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // --- Modals & Overlays ---
   const [selectedResourceDetail, setSelectedResourceDetail] = useState<Resource | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [resourceToEdit, setResourceToEdit] = useState<Resource | null>(null);
   const [comparedResourceIds, setComparedResourceIds] = useState<string[]>([]);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -103,7 +101,6 @@ export default function App() {
       selectedCategory,
       selectedPricing,
       onlyFavorites,
-      bestForFilter,
       sortBy: showRecentOnly ? 'recent' : sortBy
     };
     return storageService.filterResources(resources, filterOptions);
@@ -114,7 +111,6 @@ export default function App() {
     selectedPricing,
     onlyFavorites,
     showRecentOnly,
-    bestForFilter,
     sortBy
   ]);
 
@@ -252,7 +248,7 @@ export default function App() {
     showToast('Reset to curated seed resources.');
   };
 
-  const handleClearFilter = (type: 'category' | 'tag' | 'pricing' | 'bestFor' | 'all') => {
+  const handleClearFilter = (type: 'category' | 'tag' | 'pricing' | 'all') => {
     switch (type) {
       case 'category':
         setSelectedCategory('all');
@@ -262,14 +258,11 @@ export default function App() {
       case 'pricing':
         setSelectedPricing('all');
         break;
-      case 'bestFor':
-        setBestForFilter('');
-        break;
+
       case 'all':
         setSearchQuery('');
         setSelectedCategory('all');
         setSelectedPricing('all');
-        setBestForFilter('');
         setOnlyFavorites(false);
         setShowRecentOnly(false);
         break;
@@ -282,13 +275,13 @@ export default function App() {
     <div className={`app-shell ${comparedResourceIds.length ? 'has-comparison' : ''}`}>
       <input type="file" ref={fileInputRef} onChange={handleImportFile} accept=".json" hidden aria-label="Import Library (JSON)" />
       <Header darkMode={darkMode} onToggleDarkMode={() => setDarkMode(!darkMode)}
-        onOpenAddModal={() => { setResourceToEdit(null); setIsFormModalOpen(true); }}
+        onOpenAddModal={() => setIsFormModalOpen(true)}
         onOpenCompare={() => setIsCompareModalOpen(true)} compareCount={comparedResourceIds.length}
         onExportData={handleExportData} onImportClick={() => fileInputRef.current?.click()}
         onResetDefaults={handleResetDefaults} totalResources={resources.length} totalFavorites={favoritesCount} importing={importing} />
       <div className="page-layout">
         <Sidebar categories={categories} selectedCategory={selectedCategory}
-          onSelectCategory={id => { setSelectedCategory(id); setBestForFilter(''); }}
+          onSelectCategory={id => setSelectedCategory(id)}
           selectedPricing={selectedPricing} onSelectPricing={setSelectedPricing}
           onlyFavorites={onlyFavorites} onToggleFavorites={setOnlyFavorites}
           showRecentOnly={showRecentOnly} onToggleRecent={setShowRecentOnly}
@@ -304,11 +297,11 @@ export default function App() {
             sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode}
             activeCategoryName={selectedCategory !== 'all' ? activeCategoryObj?.name : undefined}
             activePricing={selectedPricing !== 'all' ? selectedPricing : undefined}
-            activeBestForFilter={bestForFilter || undefined} onClearFilter={handleClearFilter}
+            onClearFilter={handleClearFilter}
             onOpenMobileFilters={() => setMobileSidebarOpen(true)} resultCount={filteredResources.length} />
           {importing && <progress className="import-progress" aria-label="Import Library (JSON)" />}
           {filteredResources.length === 0 ? <EmptyState icon={<Inbox aria-hidden="true" />} title="No matching tools found"
-            actions={<><Button variant="primary" onClick={() => handleClearFilter('all')}>Clear All Filters</Button><Button onClick={() => { setResourceToEdit(null); setIsFormModalOpen(true); }}>+ Add New Resource</Button></>}>
+            actions={<><Button variant="primary" onClick={() => handleClearFilter('all')}>Clear All Filters</Button><Button onClick={() => setIsFormModalOpen(true)}>+ Add New Resource</Button></>}>
             Try clearing your search query or removing active filters to see all available tools.
           </EmptyState> : <div className={viewMode === 'grid' ? 'resource-grid' : 'resource-list'}>
             {filteredResources.map(res => <ResourceCard key={res.id} resource={res}
@@ -327,13 +320,12 @@ export default function App() {
         category={categories.find(c => c.id === selectedResourceDetail?.categoryId)}
         isOpen={Boolean(selectedResourceDetail)} onClose={() => setSelectedResourceDetail(null)}
         onToggleFavorite={handleToggleFavorite}
-        onEdit={r => { setSelectedResourceDetail(null); setResourceToEdit(r); setIsFormModalOpen(true); }}
         onDelete={handleDeleteResource}
         isCompared={Boolean(selectedResourceDetail && comparedResourceIds.includes(selectedResourceDetail.id))}
         onToggleCompare={handleToggleCompare} onSavePersonalNotes={handleSavePersonalNotes} />
       <ResourceFormModal isOpen={isFormModalOpen}
-        onClose={() => { setIsFormModalOpen(false); setResourceToEdit(null); }}
-        onSave={handleSaveResource} initialData={resourceToEdit} categories={categories} />
+        onClose={() => setIsFormModalOpen(false)}
+        onSave={handleSaveResource} categories={categories} />
       <CompareModal isOpen={isCompareModalOpen} onClose={() => setIsCompareModalOpen(false)}
         comparedResources={comparedResources} categories={categories}
         onRemoveFromCompare={id => setComparedResourceIds(comparedResourceIds.filter(cid => cid !== id))}

@@ -33,6 +33,3 @@ export function ResourceActions({ resource, isCompared, onToggleCompare, onToggl
 export function WebsiteLink({ resource, label = 'Open official website' }: { resource: Resource; label?: string }) {
   return <a className="button button--quiet icon-button" href={resource.websiteUrl} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()} aria-label={`${label}: ${resource.name}`} title={label}><ExternalLink aria-hidden="true" /></a>;
 }
-export function BestFor({ children, label = 'Best For' }: { children: React.ReactNode; label?: string }) {
-  return <div className="best-for"><div className="eyebrow">{label}</div><p>{children}</p></div>;
-}

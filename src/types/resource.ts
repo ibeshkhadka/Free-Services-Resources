@@ -7,11 +7,6 @@ export interface Category {
   description: string;
   iconName: string; // lucide icon identifier e.g. 'Database', 'Bot', 'Sparkles', 'Palette', etc.
   color: string; // accent color class
-  decisionThemes: {
-    label: string;
-    description: string;
-    filterValue?: string;
-  }[];
 }
 
 export interface Resource {
@@ -21,10 +16,8 @@ export interface Resource {
   categoryId: string;
   mainUseCase: string;
   pricing: PricingModel;
-  pricingDetails?: string;
   websiteUrl: string;
   personalNotes: string;
-  bestFor: string;
   isFavorite: boolean;
   rating?: number; // 1-5
   iconUrl?: string; // external image/favicon or fallback
@@ -40,6 +33,5 @@ export interface FilterOptions {
   selectedCategory: string; // 'all' or categoryId
   selectedPricing: PricingModel | 'all';
   onlyFavorites: boolean;
-  bestForFilter: string; // specific decision filter
   sortBy: SortOption;
 }

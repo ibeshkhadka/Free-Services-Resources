@@ -7,13 +7,13 @@ interface SearchBarProps {
   searchQuery: string; onSearchChange: (q: string) => void; sortBy: SortOption;
   onSortChange: (sort: SortOption) => void; viewMode: 'grid' | 'list';
   onViewModeChange: (mode: 'grid' | 'list') => void; activeCategoryName?: string;
-  activePricing?: string; activeBestForFilter?: string;
-  onClearFilter: (type: 'category' | 'tag' | 'pricing' | 'bestFor' | 'all') => void;
+  activePricing?: string;
+  onClearFilter: (type: 'category' | 'tag' | 'pricing' | 'all') => void;
   onOpenMobileFilters: () => void; resultCount: number;
 }
 export const SearchBar: React.FC<SearchBarProps> = ({
   searchQuery, onSearchChange, sortBy, onSortChange, viewMode, onViewModeChange,
-  activeCategoryName, activePricing, activeBestForFilter, onClearFilter, onOpenMobileFilters, resultCount
+  activeCategoryName, activePricing, onClearFilter, onOpenMobileFilters, resultCount
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -28,7 +28,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
-  const hasActiveFilters = Boolean(activeCategoryName || (activePricing && activePricing !== 'all') || activeBestForFilter || searchQuery);
+  const hasActiveFilters = Boolean(activeCategoryName || (activePricing && activePricing !== 'all') || searchQuery);
   return <section className="search-section" aria-label="Search tools">
     <div className="search-field">
       <Search aria-hidden="true" />
@@ -51,7 +51,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     {hasActiveFilters && <div className="filter-chips">
       {activeCategoryName && <FilterChip onRemove={() => onClearFilter('category')}>{`Category: ${activeCategoryName}`}</FilterChip>}
       {activePricing && activePricing !== 'all' && <FilterChip onRemove={() => onClearFilter('pricing')}>{`Pricing: ${activePricing}`}</FilterChip>}
-      {activeBestForFilter && <FilterChip onRemove={() => onClearFilter('bestFor')}>{`Decision: ${activeBestForFilter}`}</FilterChip>}
       <button className="text-button" onClick={() => onClearFilter('all')}>Reset all</button>
     </div>}
   </section>;

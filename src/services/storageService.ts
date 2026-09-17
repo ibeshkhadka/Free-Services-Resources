@@ -57,10 +57,7 @@ class StorageService {
       slug,
       description: category.description || '',
       iconName: category.iconName || 'Folder',
-      color: category.color || 'blue',
-      decisionThemes: category.decisionThemes || [
-        { label: `All ${category.name}`, description: 'Browse all resources', filterValue: '' }
-      ]
+      color: category.color || 'blue'
     };
 
     const existingIndex = categories.findIndex((c) => c.id === id);
@@ -177,12 +174,10 @@ class StorageService {
           categoryId: typeof raw.categoryId === 'string' ? raw.categoryId : '',
           mainUseCase: typeof raw.mainUseCase === 'string' ? raw.mainUseCase : '',
           pricing: raw.pricing === 'Free' || raw.pricing === 'Paid' ? raw.pricing : 'Freemium',
-          pricingDetails: typeof raw.pricingDetails === 'string' ? raw.pricingDetails : undefined,
           // Refuse non-http(s) URLs so imported data can't inject
           // javascript: hrefs into rendered links.
           websiteUrl: isSafeUrl(url) ? url : '',
           personalNotes: typeof raw.personalNotes === 'string' ? raw.personalNotes : '',
-          bestFor: typeof raw.bestFor === 'string' ? raw.bestFor : 'General development use',
           isFavorite: Boolean(raw.isFavorite),
           rating: typeof raw.rating === 'number' ? raw.rating : undefined,
           iconSymbol: typeof raw.iconSymbol === 'string' ? raw.iconSymbol : undefined,
@@ -216,7 +211,7 @@ class StorageService {
   filterResources(resources: Resource[], options: FilterOptions): Resource[] {
     let result = [...resources];
 
-    // Global Search across: name, shortDescription, category, use cases, bestFor, personalNotes
+    // Global Search across: name, shortDescription, category, use cases, personalNotes
     if (options.searchQuery.trim()) {
       const q = options.searchQuery.toLowerCase().trim();
       result = result.filter((r) => {
@@ -226,7 +221,6 @@ class StorageService {
           r.name?.toLowerCase().includes(q) ||
           r.shortDescription?.toLowerCase().includes(q) ||
           r.mainUseCase?.toLowerCase().includes(q) ||
-          r.bestFor?.toLowerCase().includes(q) ||
           (r.personalNotes && r.personalNotes.toLowerCase().includes(q))
         );
       });
@@ -245,17 +239,6 @@ class StorageService {
     // Favorites filter
     if (options.onlyFavorites) {
       result = result.filter((r) => r.isFavorite);
-    }
-
-    // Decision-oriented "Best For" filter
-    if (options.bestForFilter) {
-      const bf = options.bestForFilter.toLowerCase();
-      result = result.filter((r) => {
-        return (
-          r.bestFor?.toLowerCase().includes(bf) ||
-          r.mainUseCase?.toLowerCase().includes(bf)
-        );
-      });
     }
 
     // Sorting

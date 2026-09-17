@@ -2,16 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Resource, Category } from '../types/resource';
 import { ExternalLink, Star, Trash2, Edit3, Copy, Check, Scale } from 'lucide-react';
 import { Modal, Button, IconButton } from './ui';
-import { BestFor, PricingBadge, ResourceSymbol } from './ResourceParts';
+import { PricingBadge, ResourceSymbol } from './ResourceParts';
 
 interface ResourceDetailModalProps {
   resource: Resource | null; category?: Category; isOpen: boolean; onClose: () => void;
-  onToggleFavorite: (id: string) => void; onEdit: (resource: Resource) => void;
+  onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void; isCompared: boolean; onToggleCompare: (resource: Resource) => void;
   onSavePersonalNotes?: (id: string, notes: string) => void;
 }
 export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
-  resource, category, isOpen, onClose, onToggleFavorite, onEdit, onDelete, isCompared, onToggleCompare, onSavePersonalNotes
+  resource, category, isOpen, onClose, onToggleFavorite, onDelete, isCompared, onToggleCompare, onSavePersonalNotes
 }) => {
   const [copied, setCopied] = useState(false);
   const [copying, setCopying] = useState(false);
@@ -46,7 +46,6 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
   };
   return <Modal id="resource-detail-modal" isOpen={isOpen && Boolean(resource)} onClose={onClose} title={resource?.name || ''}
     footer={resource && <div className="detail-actions">
-      <Button id="edit-resource-modal-btn" onClick={() => onEdit(resource)}><Edit3 aria-hidden="true" />Edit</Button>
       <Button id="delete-resource-modal-btn" variant="danger" onClick={() => { if (window.confirm(`Are you sure you want to delete ${resource.name}?`)) { onDelete(resource.id); onClose(); } }}><Trash2 aria-hidden="true" />Delete</Button>
       <Button id="detail-compare-toggle-btn" aria-pressed={isCompared} onClick={() => onToggleCompare(resource)}><Scale aria-hidden="true" />{isCompared ? 'In Compare' : 'Add to Compare'}</Button>
       <Button id="detail-fav-btn" aria-pressed={resource.isFavorite} onClick={() => onToggleFavorite(resource.id)} className={resource.isFavorite ? 'is-starred' : ''}><Star aria-hidden="true" />{resource.isFavorite ? 'Bookmarked' : 'Bookmark'}</Button>
@@ -58,10 +57,8 @@ export const ResourceDetailModal: React.FC<ResourceDetailModalProps> = ({
       <p className="detail-description">{resource.shortDescription}</p>
       {error && <p role="alert" className="form-error">{error}</p>}
       <span role="status" className="sr-only">{copied ? 'Copied' : notesSaved ? 'Personal notes saved.' : ''}</span>
-      <BestFor label="Decision Recommendation (Best For)">{resource.bestFor}</BestFor>
       <div className="detail-facts">
         <section><h3 className="eyebrow">Main Use Case</h3><p>{resource.mainUseCase}</p></section>
-        <section><h3 className="eyebrow">Pricing Breakdown</h3><p>{resource.pricingDetails || `Billed under standard ${resource.pricing.toLowerCase()} tier.`}</p></section>
       </div>
       <section className="notes-section">
         <div className="notes-heading"><h3 className="eyebrow" id="personal-notes-heading">Personal Notes &amp; Verdict</h3>

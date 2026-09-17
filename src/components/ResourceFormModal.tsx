@@ -4,10 +4,10 @@ import { Button, Field, Modal } from './ui';
 
 interface ResourceFormModalProps {
   isOpen: boolean; onClose: () => void;
-  onSave: (data: Omit<Resource, 'id' | 'addedAt'> & { id?: string }) => void;
-  initialData?: Resource | null; categories: Category[];
+  onSave: (data: Omit<Resource, 'id' | 'addedAt'>) => void;
+  categories: Category[];
 }
-export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, onClose, onSave, initialData, categories }) => {
+export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, onClose, onSave, categories }) => {
   const [name, setName] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -15,25 +15,21 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, on
   const [shortDescription, setShortDescription] = useState('');
   const [mainUseCase, setMainUseCase] = useState('');
   const [pricing, setPricing] = useState<PricingModel>('Freemium');
-  const [pricingDetails, setPricingDetails] = useState('');
-  const [bestFor, setBestFor] = useState('');
   const [personalNotes, setPersonalNotes] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    setName(initialData?.name || '');
-    setWebsiteUrl(initialData?.websiteUrl || '');
-    setCategoryId(initialData?.categoryId || categories[0]?.id || 'baas');
-    setIconSymbol(initialData?.iconSymbol || '⚡');
-    setShortDescription(initialData?.shortDescription || '');
-    setMainUseCase(initialData?.mainUseCase || '');
-    setPricing(initialData?.pricing || 'Freemium');
-    setPricingDetails(initialData?.pricingDetails || '');
-    setBestFor(initialData?.bestFor || '');
-    setPersonalNotes(initialData?.personalNotes || '');
-    setIsFavorite(initialData?.isFavorite || false);
+    setName('');
+    setWebsiteUrl('');
+    setCategoryId(categories[0]?.id || 'baas');
+    setIconSymbol('⚡');
+    setShortDescription('');
+    setMainUseCase('');
+    setPricing('Freemium');
+    setPersonalNotes('');
+    setIsFavorite(false);
     setError('');
-  }, [initialData, categories, isOpen]);
+  }, [categories, isOpen]);
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     if (!name.trim() || !websiteUrl.trim()) { setError('Please provide a tool name and website URL.'); return; }
@@ -46,18 +42,17 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, on
     }
     try {
       onSave({
-        id: initialData?.id, name: name.trim(), websiteUrl: websiteUrl.trim(),
+        name: name.trim(), websiteUrl: websiteUrl.trim(),
         categoryId: categoryId || categories[0]?.id || 'baas', iconSymbol: iconSymbol.trim() || '⚡',
         shortDescription: shortDescription.trim(), mainUseCase: mainUseCase.trim(), pricing,
-        pricingDetails: pricingDetails.trim(), bestFor: bestFor.trim() || 'General development use',
         personalNotes: personalNotes.trim(), isFavorite
       });
       onClose();
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
   };
   return <Modal id="resource-form-modal" isOpen={isOpen} onClose={onClose}
-    title={initialData ? `Edit Resource: ${initialData.name}` : 'Add New Tool to Library'}
-    footer={<><Button onClick={onClose}>Cancel</Button><Button id="save-resource-btn" type="submit" form="resource-form" variant="primary">{initialData ? 'Save Changes' : 'Add to Library'}</Button></>}>
+    title='Add New Tool to Library'
+    footer={<><Button onClick={onClose}>Cancel</Button><Button id="save-resource-btn" type="submit" form="resource-form" variant="primary">Add to Library</Button></>}>
     <form id="resource-form" onSubmit={handleSubmit} className="form-body">
       {error && <p role="alert" className="form-error">{error}</p>}
       <div className="form-grid">
@@ -66,11 +61,7 @@ export const ResourceFormModal: React.FC<ResourceFormModalProps> = ({ isOpen, on
         <Field label="Icon / Emoji"><input type="text" maxLength={4} value={iconSymbol} onChange={event => setIconSymbol(event.target.value)} placeholder="⚡" /></Field>
         <Field label="Website URL *"><input type="url" required value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} placeholder="https://example.com" /></Field>
         <Field label="Pricing"><select value={pricing} onChange={event => setPricing(event.target.value as PricingModel)}><option value="Free">Free</option><option value="Freemium">Freemium</option><option value="Paid">Paid</option></select></Field>
-        <Field label="Pricing Details"><input type="text" value={pricingDetails} onChange={event => setPricingDetails(event.target.value)} placeholder="e.g. Free tier, Pro $20/mo" /></Field>
       </div>
-      <Field className="field-callout" label={'🎯 "Best For" Field (Decision Recommendation) *'} help="This powers decision-oriented browsing so you know immediately which tool to pick.">
-        <input type="text" required value={bestFor} onChange={event => setBestFor(event.target.value)} placeholder="e.g. Best database experience & rapid SQL MVPs" />
-      </Field>
       <Field label="Short Description *"><textarea required rows={2} value={shortDescription} onChange={event => setShortDescription(event.target.value)} placeholder="One or two sentences explaining what the tool does..." /></Field>
       <Field label="Main Use Case"><input type="text" value={mainUseCase} onChange={event => setMainUseCase(event.target.value)} placeholder="e.g. Full-stack application backend with relational database power." /></Field>
       <Field label="Personal Notes & Impressions"><textarea rows={2} value={personalNotes} onChange={event => setPersonalNotes(event.target.value)} placeholder="Your honest thoughts, testing experience, or project ideas..." /></Field>

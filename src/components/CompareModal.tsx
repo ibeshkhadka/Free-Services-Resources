@@ -25,7 +25,6 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose, com
           </div></th>)}
         </tr></thead>
         <tbody>
-          <tr><th scope="row">Best For</th>{comparedResources.map(resource => <td className="compare-recommendation" key={resource.id}>{resource.bestFor}</td>)}</tr>
           <tr><th scope="row">Primary Use Case</th>{comparedResources.map(resource => <td key={resource.id}>{resource.mainUseCase}</td>)}</tr>
           {hasNotes && <tr><th scope="row">Personal Notes</th>{comparedResources.map(resource => <td key={resource.id}>{resource.personalNotes ? `"${resource.personalNotes}"` : null}</td>)}</tr>}
           <tr><th scope="row"><span className="sr-only">Full Details</span></th>{comparedResources.map(resource => <td key={resource.id}><div className="compare-links">
