@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Resource, Category } from '../types/resource';
-import { ResourceIdentity, ResourceActions, WebsiteLink, BestFor } from './ResourceParts';
+import { ResourceIdentity, ResourceActions, WebsiteLink } from './ResourceParts';
 import { IconButton } from './ui';
 
 interface ResourceCardProps {
@@ -20,10 +20,7 @@ export const ResourceCard: React.FC<ResourceCardProps> = ({ resource, category, 
     <div>
       <ResourceIdentity resource={resource} category={category} onSelect={onSelect} compactCategory={!list} />
       <p className="resource-description">{resource.shortDescription}</p>
-      {list ? <p className="row-best-for">{resource.bestFor}</p> : <>
-        <BestFor>{resource.bestFor}</BestFor>
-        <p className="resource-use-case"><strong>Use case: </strong>{resource.mainUseCase}</p>
-      </>}
+      {list && <p className="row-best-for">{resource.bestFor}</p>}
     </div>
     {list ? <div className="row-actions">{actions}<WebsiteLink resource={resource} label="Open website" /></div> :
       <div className="resource-footer"><div className="resource-actions"><WebsiteLink resource={resource} /><IconButton label={`Full Details: ${resource.name}`} onClick={() => onSelect(resource)}><ArrowRight aria-hidden="true" /></IconButton></div>{actions}</div>}
